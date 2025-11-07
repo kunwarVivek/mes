@@ -1,0 +1,17 @@
+.users-page {
+  min-height: 100vh;
+  background-color: #f9fafb;
+}
+
+.users-page__content {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 2rem 4rem;
+}
+
+.users-page__loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem 0;
+}

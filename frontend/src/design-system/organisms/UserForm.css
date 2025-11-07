@@ -1,0 +1,47 @@
+.user-form {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.user-form__form {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.user-form__checkbox {
+  margin-bottom: 1.5rem;
+}
+
+.user-form__checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #404040;
+}
+
+.user-form__checkbox-label input[type='checkbox'] {
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: pointer;
+}
+
+.user-form__error {
+  padding: 1rem;
+  background-color: #fee2e2;
+  border: 1px solid #ef4444;
+  border-radius: 0.5rem;
+  color: #991b1b;
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+.user-form__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}

@@ -1,0 +1,204 @@
+version: '3.8'
+
+services:
+  # ============================================================================
+  # PostgreSQL with Extensions (pgmq, pg_cron, pg_search, pg_duckdb, timescaledb)
+  # Replaces: Redis, Celery, RabbitMQ, Elasticsearch
+  # ============================================================================
+  postgres:
+    image: tembo/tembo-pg-slim:latest  # Includes all PostgreSQL extensions
+    container_name: unison-postgres
+    environment:
+      POSTGRES_USER: unison
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-unison_dev_password}
+      POSTGRES_DB: unison_erp
+    command: >
+      postgres
+      -c shared_preload_libraries='pg_cron,timescaledb,pgmq'
+      -c cron.database_name='unison_erp'
+      -c shared_buffers='4GB'
+      -c effective_cache_size='12GB'
+      -c maintenance_work_mem='1GB'
+      -c max_worker_processes='8'
+      -c max_parallel_workers='8'
+      -c max_parallel_workers_per_gather='4'
+      -c wal_buffers='16MB'
+      -c checkpoint_completion_target='0.9'
+      -c random_page_cost='1.1'
+      -c effective_io_concurrency='200'
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docs/03-postgresql/init-extensions.sql:/docker-entrypoint-initdb.d/01-extensions.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U unison -d unison_erp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================================================
+  # Backend API (FastAPI)
+  # ============================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: unison-backend
+    environment:
+      # Database
+      - DATABASE_URL=postgresql://unison:${POSTGRES_PASSWORD:-unison_dev_password}@postgres:5432/unison_erp
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_USER=unison
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-unison_dev_password}
+      - POSTGRES_DB=unison_erp
+
+      # Security
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-min-32-chars-long}
+      - JWT_ALGORITHM=HS256
+      - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+      # CORS
+      - BACKEND_CORS_ORIGINS=["http://localhost:3000","http://localhost:5173"]
+
+      # MinIO (Object Storage)
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
+      - MINIO_BUCKET=unison-files
+      - MINIO_SECURE=false
+
+      # SAP Integration (optional)
+      - SAP_BASE_URL=${SAP_BASE_URL:-}
+      - SAP_USERNAME=${SAP_USERNAME:-}
+      - SAP_PASSWORD=${SAP_PASSWORD:-}
+      - SAP_CLIENT=${SAP_CLIENT:-100}
+
+      # Environment
+      - ENVIRONMENT=development
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - backend_cache:/app/.cache
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+
+  # ============================================================================
+  # PGMQ Background Worker (Replaces Celery + RabbitMQ)
+  # Processes: SAP sync, barcode generation, report generation, email notifications
+  # ============================================================================
+  pgmq_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: unison-pgmq-worker
+    environment:
+      - DATABASE_URL=postgresql://unison:${POSTGRES_PASSWORD:-unison_dev_password}@postgres:5432/unison_erp
+      - QUEUE_NAME=background_jobs
+      - WORKER_CONCURRENCY=5
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
+      - SAP_BASE_URL=${SAP_BASE_URL:-}
+      - SAP_USERNAME=${SAP_USERNAME:-}
+      - SAP_PASSWORD=${SAP_PASSWORD:-}
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: python -m app.workers.pgmq_worker
+    restart: unless-stopped
+
+  # ============================================================================
+  # Frontend (React + Vite)
+  # ============================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: unison-frontend
+    environment:
+      - VITE_API_URL=http://localhost:8000
+      - VITE_WS_URL=ws://localhost:8000/ws
+      - VITE_MINIO_URL=http://localhost:9000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    command: npm run dev -- --host 0.0.0.0 --port 3000
+    restart: unless-stopped
+
+  # ============================================================================
+  # MinIO (S3-Compatible Object Storage)
+  # For: PDFs, images, barcodes, documents, attachments
+  # ============================================================================
+  minio:
+    image: minio/minio:latest
+    container_name: unison-minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: unless-stopped
+
+  # ============================================================================
+  # pgAdmin (Database Management UI) - Optional for Development
+  # ============================================================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: unison-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@unison.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    profiles:
+      - dev  # Only starts with: docker-compose --profile dev up
+
+# ============================================================================
+# Volumes
+# ============================================================================
+volumes:
+  postgres_data:
+    driver: local
+  minio_data:
+    driver: local
+  backend_cache:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+# ============================================================================
+# Networks (Optional - uses default bridge network)
+# ============================================================================
+networks:
+  default:
+    name: unison-network
+    driver: bridge

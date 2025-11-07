@@ -1,0 +1,18 @@
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-field__error {
+  font-size: 0.875rem;
+  color: #ef4444;
+  line-height: 1.5;
+}
+
+.form-field__helper {
+  font-size: 0.875rem;
+  color: #737373;
+  line-height: 1.5;
+}
