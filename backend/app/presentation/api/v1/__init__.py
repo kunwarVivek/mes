@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.presentation.api.v1 import users, auth, materials, machines, quality, shifts, maintenance, organizations, plants, departments, projects, production_logs, lanes, bom
+from app.presentation.api.v1 import users, auth, materials, machines, quality, shifts, maintenance, organizations, plants, departments, projects, production_logs, lanes, bom, metrics
 
 api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
@@ -16,5 +16,6 @@ api_router.include_router(maintenance.router, tags=["maintenance"])
 api_router.include_router(production_logs.router, prefix="/production-logs", tags=["production-logs"])
 api_router.include_router(lanes.router, tags=["lanes"])
 api_router.include_router(bom.router, prefix="/bom", tags=["bom"])
+api_router.include_router(metrics.router, prefix="/metrics", tags=["metrics"])
 
 __all__ = ["api_router"]
