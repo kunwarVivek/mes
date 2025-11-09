@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from app.core.database import get_db
-from app.models.user import User as UserModel
+from app.infrastructure.persistence.models import UserModel
 from app.schemas.user import User, UserCreate, UserUpdate
 from passlib.context import CryptContext
 

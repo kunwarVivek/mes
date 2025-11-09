@@ -1,0 +1,106 @@
+/**
+ * WorkOrdersPage Styles
+ *
+ * Professional, clean layout for work orders management
+ */
+
+.work-orders-page {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.work-orders-page__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.work-orders-page__header h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.work-orders-page__filters {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f7fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.work-orders-page__filters label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 500;
+  color: #4a5568;
+}
+
+.work-orders-page__filter-select {
+  padding: 0.5rem 1rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  background: white;
+  font-size: 0.95rem;
+  color: #2d3748;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.work-orders-page__filter-select:hover {
+  border-color: #4299e1;
+}
+
+.work-orders-page__filter-select:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.work-orders-page__form {
+  margin-bottom: 2rem;
+}
+
+.work-orders-page__table {
+  margin-bottom: 1.5rem;
+}
+
+.work-orders-page__pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.work-orders-page__pagination-info {
+  font-weight: 500;
+  color: #4a5568;
+  min-width: 120px;
+  text-align: center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .work-orders-page {
+    padding: 1rem;
+  }
+
+  .work-orders-page__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .work-orders-page__header h1 {
+    font-size: 1.5rem;
+  }
+
+  .work-orders-page__pagination {
+    flex-direction: column;
+  }
+}

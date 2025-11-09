@@ -1,0 +1,11 @@
+New Material Created
+
+A new material has been created in the system:
+
+Material Code: {{ material_code }}
+Description: {{ material_description }}
+Base UOM: {{ base_uom }}
+Created By: {{ created_by }}
+
+---
+This is an automated notification from Unison ERP.

@@ -1,0 +1,11 @@
+Work Order Released
+
+Work order {{ work_order_number }} has been released for production:
+
+Work Order: {{ work_order_number }}
+Material: {{ material_code }}
+Quantity: {{ quantity }}
+Status: {{ status }}
+
+---
+This is an automated notification from Unison ERP.

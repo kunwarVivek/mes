@@ -1,0 +1,75 @@
+.production-plans-table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.production-plans-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.production-plans-table th {
+  text-align: left;
+  padding: 0.75rem;
+  background-color: var(--color-gray-100);
+  border-bottom: 2px solid var(--color-gray-200);
+  font-weight: 600;
+}
+
+.production-plans-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.production-plans-table-row-clickable {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.production-plans-table-row-clickable:hover {
+  background-color: var(--color-gray-50);
+}
+
+.production-plans-table-cell-code {
+  font-family: var(--font-mono, monospace);
+  font-weight: 600;
+}
+
+.production-plans-table-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.production-plans-table-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+/* Status badge colors */
+.status-draft {
+  background-color: var(--color-gray-200);
+  color: var(--color-gray-700);
+}
+
+.status-approved {
+  background-color: var(--color-blue-100);
+  color: var(--color-blue-700);
+}
+
+.status-in-progress {
+  background-color: var(--color-yellow-100);
+  color: var(--color-yellow-700);
+}
+
+.status-completed {
+  background-color: var(--color-green-100);
+  color: var(--color-green-700);
+}
+
+.status-cancelled {
+  background-color: var(--color-red-100);
+  color: var(--color-red-700);
+}

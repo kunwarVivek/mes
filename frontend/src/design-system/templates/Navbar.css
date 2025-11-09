@@ -1,0 +1,64 @@
+/* Navbar Base Styles */
+.navbar {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  background-color: var(--color-background);
+  border-bottom: 1px solid var(--color-border);
+  z-index: 30;
+}
+
+.navbar__container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 var(--spacing-lg);
+  max-width: 100%;
+}
+
+/* Left Section */
+.navbar__left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex: 1;
+}
+
+.navbar__menu-button {
+  flex-shrink: 0;
+}
+
+.navbar__title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Right Section (Actions) */
+.navbar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+/* Responsive Behavior */
+@media (max-width: 768px) {
+  .navbar__container {
+    padding: 0 var(--spacing-md);
+  }
+
+  .navbar__title {
+    font-size: var(--font-size-md);
+  }
+}
+
+/* Focus Styles */
+.navbar:focus-within {
+  box-shadow: inset 0 -2px 0 0 var(--color-primary);
+}

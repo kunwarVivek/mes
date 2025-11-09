@@ -1,0 +1,56 @@
+/* AppLayout Base Styles */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  background-color: var(--color-background);
+}
+
+/* Main area (Navbar + Content) */
+.app-layout__main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0; /* Prevents flex item from overflowing */
+  margin-left: 260px; /* Width of permanent sidebar */
+  transition: margin-left 0.3s ease-in-out;
+}
+
+/* Main content area */
+.app-layout__content {
+  flex: 1;
+  padding: var(--spacing-lg);
+  overflow-y: auto;
+  background-color: var(--color-background-secondary, var(--color-background));
+}
+
+/* Responsive Behavior */
+@media (max-width: 1024px) {
+  .app-layout__main {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-layout__content {
+    padding: var(--spacing-md);
+  }
+}
+
+/* Scrollbar Styling */
+.app-layout__content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.app-layout__content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app-layout__content::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+.app-layout__content::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}

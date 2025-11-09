@@ -227,11 +227,11 @@ SELECT cron.schedule(
 
 -- Materials search index
 SELECT paradedb.create_bm25(
-    table_name => 'materials',
+    table_name => 'material',
     index_name => 'materials_search_idx',
     key_field => 'id',
-    text_fields => '{name, description, part_number, tags, material_code}',
-    numeric_fields => '{unit_cost, reorder_point, lead_time_days}',
+    text_fields => '{material_number, material_name, description}',
+    numeric_fields => '{safety_stock, reorder_point, lead_time_days}',
     boolean_fields => '{is_active}'
 );
 

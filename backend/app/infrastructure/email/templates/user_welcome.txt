@@ -1,0 +1,15 @@
+Welcome to Unison ERP!
+
+Hello {{ username }},
+
+Your account has been successfully created. You can now access the Unison ERP system.
+
+Username: {{ username }}
+Email: {{ email }}
+
+Access the system at: {{ app_url }}
+
+If you have any questions, please contact your system administrator.
+
+---
+This is an automated notification from Unison ERP.

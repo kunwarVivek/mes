@@ -1,0 +1,126 @@
+/**
+ * MachineStatusCard Styles
+ */
+.machine-status-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  background-color: white;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+
+.machine-status-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.machine-status-card.compact {
+  padding: 12px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.inactive-badge {
+  padding: 4px 8px;
+  background-color: #f8d7da;
+  color: #721c24;
+  font-size: 12px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.card-body {
+  margin-bottom: 12px;
+}
+
+.machine-name {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-available {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-running {
+  background-color: #cce5ff;
+  color: #004085;
+}
+
+.status-idle {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+.status-down {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.status-setup {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+.status-maintenance {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status-pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.card-actions button {
+  flex: 1;
+  padding: 8px 16px;
+  border: 1px solid #007bff;
+  background-color: white;
+  color: #007bff;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.card-actions button:hover {
+  background-color: #007bff;
+  color: white;
+}

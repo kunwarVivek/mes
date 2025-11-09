@@ -1,0 +1,100 @@
+/**
+ * BOMTreeView Styles
+ */
+
+.bom-tree {
+  width: 100%;
+}
+
+.bom-tree-item {
+  margin-bottom: 4px;
+}
+
+.bom-tree-node {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.bom-tree-node:hover {
+  background-color: #f9fafb;
+}
+
+.bom-tree-toggle {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.bom-tree-toggle:hover {
+  color: #374151;
+}
+
+.bom-tree-spacer {
+  width: 24px;
+  flex-shrink: 0;
+}
+
+.bom-tree-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  gap: 16px;
+}
+
+.bom-tree-main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.bom-tree-material {
+  font-weight: 500;
+  color: #111827;
+}
+
+.bom-tree-quantity {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.bom-tree-line-number {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.bom-tree-scrap {
+  font-size: 14px;
+  color: #f97316;
+}
+
+.bom-tree-phantom-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #7c3aed;
+  background-color: #f3e8ff;
+  border-radius: 4px;
+}
+
+.bom-tree-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}

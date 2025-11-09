@@ -1,0 +1,91 @@
+/**
+ * Link Atom Styles
+ * Navigation links with hover states
+ */
+
+.link {
+  /* Base styles */
+  display: inline;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease-in-out, text-decoration 0.2s ease-in-out;
+  position: relative;
+}
+
+/* Variant: Default */
+.link--default {
+  color: var(--color-text-primary);
+}
+
+.link--default:hover:not(.link--disabled) {
+  color: var(--color-primary);
+}
+
+/* Variant: Primary */
+.link--primary {
+  color: var(--color-primary);
+}
+
+.link--primary:hover:not(.link--disabled) {
+  color: var(--color-primary-hover);
+}
+
+/* Variant: Muted */
+.link--muted {
+  color: var(--color-text-secondary);
+}
+
+.link--muted:hover:not(.link--disabled) {
+  color: var(--color-text-primary);
+}
+
+/* Underline: Always */
+.link--underline-always {
+  text-decoration: underline;
+}
+
+/* Underline: Hover */
+.link--underline-hover {
+  text-decoration: none;
+}
+
+.link--underline-hover:hover:not(.link--disabled) {
+  text-decoration: underline;
+}
+
+/* Underline: None */
+.link--underline-none {
+  text-decoration: none;
+}
+
+.link--underline-none:hover:not(.link--disabled) {
+  text-decoration: none;
+}
+
+/* Disabled State */
+.link--disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Focus Styles - Accessibility */
+.link:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Active State */
+.link:active:not(.link--disabled) {
+  opacity: 0.8;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .link {
+    transition: none;
+  }
+}

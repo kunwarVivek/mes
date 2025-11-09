@@ -1,0 +1,98 @@
+.pm-schedules-table {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.pm-schedules-table__table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+}
+
+.pm-schedules-table__table th {
+  background-color: #f8f9fa;
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.pm-schedules-table__table td {
+  padding: 12px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.pm-schedules-table__loading,
+.pm-schedules-table__empty {
+  text-align: center;
+  padding: 40px;
+  color: #6c757d;
+}
+
+.pm-schedules-table__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.trigger-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.trigger-badge--calendar {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.trigger-badge--meter {
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-badge--active {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-badge--inactive {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.btn--edit {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn--edit:hover {
+  background-color: #0056b3;
+}
+
+.btn--delete {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn--delete:hover {
+  background-color: #c82333;
+}

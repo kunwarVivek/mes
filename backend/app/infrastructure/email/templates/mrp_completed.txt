@@ -1,0 +1,12 @@
+MRP Run Completed
+
+Material Requirements Planning (MRP) run has completed successfully:
+
+Run ID: {{ run_id }}
+Planned Orders Created: {{ planned_orders_count }}
+Execution Time: {{ execution_time }}
+
+Next Step: Review the planned orders and convert to production or purchase orders.
+
+---
+This is an automated notification from Unison ERP.

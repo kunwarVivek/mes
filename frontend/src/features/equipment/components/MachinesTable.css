@@ -1,0 +1,73 @@
+/**
+ * MachinesTable Styles
+ */
+.machines-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.machines-table th,
+.machines-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.machines-table tbody tr:hover {
+  background-color: #f5f5f5;
+  cursor: pointer;
+}
+
+/* Status badges */
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-available {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-running {
+  background-color: #cce5ff;
+  color: #004085;
+}
+
+.status-idle {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+.status-down {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.status-setup {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+.status-maintenance {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+/* Pulse animation for RUNNING status */
+.status-pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}

@@ -1,6 +1,7 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
+from typing import Dict
 from app.core.database import get_db
 from app.infrastructure.persistence.user_repository_impl import UserRepository
 from app.infrastructure.security.jwt_handler import JWTHandler
@@ -55,6 +56,22 @@ async def get_current_user(
         )
 
 
+def get_user_context(request: Request) -> Dict[str, any]:
+    """
+    Get user context from request state (set by auth_middleware).
+
+    Returns dict with: id, email, organization_id, plant_id
+
+    This is used by material endpoints that need org/plant context for RLS.
+    """
+    if not hasattr(request.state, 'user'):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated"
+        )
+    return request.state.user
+
+
 async def get_current_superuser(
     current_user: User = Depends(get_current_user)
 ) -> User:
@@ -63,5 +80,16 @@ async def get_current_superuser(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions"
+        )
+    return current_user
+
+async def get_current_active_user(
+    current_user: User = Depends(get_current_user)
+) -> User:
+    """Dependency to get current active user"""
+    if not current_user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Inactive user"
         )
     return current_user

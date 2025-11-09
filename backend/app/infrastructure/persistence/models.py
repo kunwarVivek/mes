@@ -8,6 +8,8 @@ class UserModel(Base):
 
     Represents the user table in the database.
     Separated from domain entity to maintain clean architecture.
+
+    Multi-tenancy: Users belong to an organization and optionally a plant.
     """
     __tablename__ = "users"
 
@@ -15,6 +17,8 @@ class UserModel(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     username = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
+    organization_id = Column(Integer, nullable=True, index=True)  # FK to organizations
+    plant_id = Column(Integer, nullable=True, index=True)  # FK to plants (optional)
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

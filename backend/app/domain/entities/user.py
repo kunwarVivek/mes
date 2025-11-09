@@ -17,6 +17,8 @@ class User:
         email: Email,
         username: Username,
         hashed_password: str,
+        organization_id: Optional[int] = None,
+        plant_id: Optional[int] = None,
         is_active: bool = True,
         is_superuser: bool = False,
         created_at: Optional[datetime] = None,
@@ -26,6 +28,8 @@ class User:
         self._email = email
         self._username = username
         self._hashed_password = hashed_password
+        self._organization_id = organization_id
+        self._plant_id = plant_id
         self._is_active = is_active
         self._is_superuser = is_superuser
         self._created_at = created_at or datetime.utcnow()
@@ -62,6 +66,14 @@ class User:
     @property
     def updated_at(self) -> Optional[datetime]:
         return self._updated_at
+
+    @property
+    def organization_id(self) -> Optional[int]:
+        return self._organization_id
+
+    @property
+    def plant_id(self) -> Optional[int]:
+        return self._plant_id
 
     def activate(self) -> None:
         """Business logic: Activate user account"""

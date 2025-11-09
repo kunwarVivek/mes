@@ -1,0 +1,106 @@
+/* Avatar Atom Styles */
+
+.avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background-color: var(--color-neutral-200);
+  color: var(--color-neutral-700);
+  font-weight: 500;
+  user-select: none;
+}
+
+/* Sizes */
+.avatar--xs {
+  width: 24px;
+  height: 24px;
+  font-size: 10px;
+}
+
+.avatar--sm {
+  width: 32px;
+  height: 32px;
+  font-size: 12px;
+}
+
+.avatar--md {
+  width: 40px;
+  height: 40px;
+  font-size: 14px;
+}
+
+.avatar--lg {
+  width: 56px;
+  height: 56px;
+  font-size: 18px;
+}
+
+.avatar--xl {
+  width: 80px;
+  height: 80px;
+  font-size: 24px;
+}
+
+/* Shapes */
+.avatar--circle {
+  border-radius: 50%;
+}
+
+.avatar--square {
+  border-radius: var(--radius-md);
+}
+
+/* Image */
+.avatar__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Fallback */
+.avatar__fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Status Indicator */
+.avatar__status {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 25%;
+  height: 25%;
+  min-width: 8px;
+  min-height: 8px;
+  border-radius: 50%;
+  border: 2px solid var(--color-background);
+  box-sizing: content-box;
+}
+
+.avatar__status--online {
+  background-color: var(--color-success);
+}
+
+.avatar__status--offline {
+  background-color: var(--color-neutral-400);
+}
+
+.avatar__status--away {
+  background-color: var(--color-warning);
+}
+
+.avatar__status--busy {
+  background-color: var(--color-error);
+}
+
+/* Accessibility */
+.avatar:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}

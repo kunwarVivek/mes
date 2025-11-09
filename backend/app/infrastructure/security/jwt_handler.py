@@ -74,8 +74,10 @@ class JWTHandler:
             return payload
         except jwt.ExpiredSignatureError:
             raise ValueError("Token has expired")
-        except jwt.JWTError:
+        except jwt.DecodeError:
             raise ValueError("Invalid token")
+        except Exception as e:
+            raise ValueError(f"Token validation failed: {str(e)}")
 
     def verify_token(self, token: str) -> bool:
         """Verify if token is valid"""

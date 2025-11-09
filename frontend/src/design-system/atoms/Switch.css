@@ -1,0 +1,116 @@
+/* Switch Container */
+.switch-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Switch Base */
+.switch {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  outline: none;
+}
+
+.switch:focus-visible .switch__track {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* Track */
+.switch__track {
+  display: block;
+  border-radius: 9999px;
+  background-color: #d1d5db;
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+.switch--checked .switch__track {
+  background-color: #3b82f6;
+}
+
+/* Thumb */
+.switch__thumb {
+  display: block;
+  border-radius: 50%;
+  background-color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Sizes */
+.switch--sm .switch__track {
+  width: 2rem;
+  height: 1rem;
+}
+
+.switch--sm .switch__thumb {
+  width: 0.75rem;
+  height: 0.75rem;
+  left: 0.125rem;
+}
+
+.switch--sm.switch--checked .switch__thumb {
+  transform: translateY(-50%) translateX(1rem);
+}
+
+.switch--md .switch__track {
+  width: 2.75rem;
+  height: 1.5rem;
+}
+
+.switch--md .switch__thumb {
+  width: 1.125rem;
+  height: 1.125rem;
+  left: 0.1875rem;
+}
+
+.switch--md.switch--checked .switch__thumb {
+  transform: translateY(-50%) translateX(1.25rem);
+}
+
+.switch--lg .switch__track {
+  width: 3.5rem;
+  height: 2rem;
+}
+
+.switch--lg .switch__thumb {
+  width: 1.5rem;
+  height: 1.5rem;
+  left: 0.25rem;
+}
+
+.switch--lg.switch--checked .switch__thumb {
+  transform: translateY(-50%) translateX(1.5rem);
+}
+
+/* Disabled State */
+.switch--disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.switch--disabled .switch__track {
+  background-color: #e5e7eb;
+}
+
+.switch--disabled.switch--checked .switch__track {
+  background-color: #93c5fd;
+}
+
+/* Label */
+.switch__label {
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.switch--disabled + .switch__label {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

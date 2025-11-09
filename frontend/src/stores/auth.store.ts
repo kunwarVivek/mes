@@ -6,6 +6,7 @@ import { persist } from 'zustand/middleware'
  *
  * Global state management for authentication.
  * Replaces prop drilling with centralized state.
+ * Includes tenant context for RLS (Row Level Security).
  */
 
 interface User {
@@ -16,17 +17,33 @@ interface User {
   is_superuser: boolean
 }
 
+interface Organization {
+  id: number
+  org_code: string
+  org_name: string
+}
+
+interface Plant {
+  id: number
+  plant_code: string
+  plant_name: string
+}
+
 interface AuthState {
   user: User | null
   accessToken: string | null
   refreshToken: string | null
   isAuthenticated: boolean
+  currentOrg: Organization | null
+  currentPlant: Plant | null
 
   // Actions
   login: (user: User, accessToken: string, refreshToken: string) => void
   logout: () => void
   updateUser: (user: Partial<User>) => void
-  setTokens: (accessToken: string, refreshToken: string) => void
+  setTokens: (accessToken: string, refreshToken?: string) => void
+  setCurrentOrg: (org: Organization | null) => void
+  setCurrentPlant: (plant: Plant | null) => void
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -36,6 +53,8 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
+      currentOrg: null,
+      currentPlant: null,
 
       login: (user, accessToken, refreshToken) =>
         set({
@@ -51,6 +70,8 @@ export const useAuthStore = create<AuthState>()(
           accessToken: null,
           refreshToken: null,
           isAuthenticated: false,
+          currentOrg: null,
+          currentPlant: null,
         }),
 
       updateUser: (updatedUser) =>
@@ -59,7 +80,17 @@ export const useAuthStore = create<AuthState>()(
         })),
 
       setTokens: (accessToken, refreshToken) =>
-        set({ accessToken, refreshToken }),
+        set((state) => ({
+          accessToken,
+          refreshToken: refreshToken ?? state.refreshToken,
+          isAuthenticated: !!accessToken,
+        })),
+
+      setCurrentOrg: (org) =>
+        set({ currentOrg: org }),
+
+      setCurrentPlant: (plant) =>
+        set({ currentPlant: plant }),
     }),
     {
       name: 'auth-storage', // localStorage key

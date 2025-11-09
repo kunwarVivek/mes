@@ -1,0 +1,14 @@
+Low Stock Alert
+
+The following material has reached the reorder point:
+
+Material Code: {{ material_code }}
+Description: {{ material_description }}
+Current Stock: {{ current_stock }}
+Reorder Point: {{ reorder_point }}
+Warehouse: {{ warehouse }}
+
+Action Required: Please review and create a purchase order if needed.
+
+---
+This is an automated notification from Unison ERP.

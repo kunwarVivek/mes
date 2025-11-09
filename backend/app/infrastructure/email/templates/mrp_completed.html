@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>MRP Run Completed</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #3498db;">MRP Run Completed</h2>
+        <p>Material Requirements Planning (MRP) run has completed successfully:</p>
+
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Run ID:</strong></td>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ run_id }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Planned Orders Created:</strong></td>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ planned_orders_count }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Execution Time:</strong></td>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ execution_time }}</td>
+            </tr>
+        </table>
+
+        <p style="background-color: #d1ecf1; padding: 10px; border-left: 4px solid #17a2b8;">
+            <strong>Next Step:</strong> Review the planned orders and convert to production or purchase orders.
+        </p>
+
+        <p style="color: #7f8c8d; font-size: 12px; margin-top: 30px;">
+            This is an automated notification from Unison ERP.
+        </p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,133 @@
+/**
+ * IconButton Atom Styles
+ * Icon-only buttons for toolbars and actions
+ */
+
+.icon-button {
+  /* Reset & Base */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  position: relative;
+  transition: all 0.2s ease-in-out;
+  border-radius: var(--border-radius-md);
+
+  /* Remove default button styles */
+  background: none;
+  padding: 0;
+}
+
+/* Icon wrapper */
+.icon-button__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* Size Variants */
+.icon-button--sm {
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
+}
+
+.icon-button--md {
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+}
+
+.icon-button--lg {
+  width: 48px;
+  height: 48px;
+  font-size: 24px;
+}
+
+/* Variant: Default */
+.icon-button--default {
+  background-color: var(--color-background-secondary);
+  color: var(--color-text-primary);
+}
+
+.icon-button--default:hover:not(:disabled) {
+  background-color: var(--color-background-tertiary);
+  transform: translateY(-1px);
+}
+
+.icon-button--default:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Variant: Primary */
+.icon-button--primary {
+  background-color: var(--color-primary);
+  color: var(--color-text-on-primary);
+}
+
+.icon-button--primary:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+  transform: translateY(-1px);
+}
+
+.icon-button--primary:active:not(:disabled) {
+  background-color: var(--color-primary-active);
+  transform: translateY(0);
+}
+
+/* Variant: Danger */
+.icon-button--danger {
+  background-color: var(--color-error);
+  color: var(--color-text-on-primary);
+}
+
+.icon-button--danger:hover:not(:disabled) {
+  background-color: var(--color-error-hover);
+  transform: translateY(-1px);
+}
+
+.icon-button--danger:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Variant: Ghost */
+.icon-button--ghost {
+  background-color: transparent;
+  color: var(--color-text-secondary);
+}
+
+.icon-button--ghost:hover:not(:disabled) {
+  background-color: var(--color-background-secondary);
+  color: var(--color-text-primary);
+}
+
+.icon-button--ghost:active:not(:disabled) {
+  background-color: var(--color-background-tertiary);
+}
+
+/* Disabled State */
+.icon-button:disabled,
+.icon-button--disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Focus Styles - Accessibility */
+.icon-button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .icon-button {
+    transition: none;
+  }
+
+  .icon-button:hover:not(:disabled) {
+    transform: none;
+  }
+}

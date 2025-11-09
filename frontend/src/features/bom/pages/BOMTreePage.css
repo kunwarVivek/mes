@@ -1,0 +1,163 @@
+/**
+ * BOM Tree Page Styles
+ */
+
+.bom-tree-page {
+  padding: 24px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.bom-tree-page-header {
+  margin-bottom: 24px;
+}
+
+.bom-tree-page-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.bom-tree-page-content {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 24px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Sidebar */
+.bom-tree-page-sidebar {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  background-color: #ffffff;
+  overflow-y: auto;
+}
+
+.bom-tree-sidebar-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #111827;
+}
+
+.bom-tree-sidebar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bom-tree-sidebar-item {
+  width: 100%;
+  text-align: left;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background-color: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bom-tree-sidebar-item:hover {
+  background-color: #f9fafb;
+  border-color: #e5e7eb;
+}
+
+.bom-tree-sidebar-item-active {
+  background-color: #eff6ff;
+  border-color: #3b82f6;
+}
+
+.bom-tree-sidebar-item-number {
+  font-weight: 500;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.bom-tree-sidebar-item-name {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 2px;
+}
+
+.bom-tree-sidebar-item-version {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* Main Content */
+.bom-tree-page-main {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 24px;
+  background-color: #ffffff;
+  overflow-y: auto;
+}
+
+.bom-tree-main-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.bom-tree-main-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.bom-tree-main-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.bom-tree-form-container {
+  margin-bottom: 24px;
+}
+
+.bom-tree-container {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  background-color: #fafafa;
+}
+
+/* States */
+.bom-tree-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 16px;
+  color: #6b7280;
+}
+
+.bom-tree-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: #6b7280;
+}
+
+.bom-tree-empty {
+  padding: 16px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.bom-tree-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  color: #6b7280;
+  text-align: center;
+}

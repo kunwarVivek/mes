@@ -1,0 +1,84 @@
+.bom-form__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+}
+
+.bom-form__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.bom-form__section-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0;
+  padding-bottom: var(--spacing-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.bom-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.bom-form__label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+}
+
+.bom-form__required {
+  color: var(--color-danger);
+}
+
+.bom-form__textarea,
+.bom-form__select {
+  padding: var(--spacing-2) var(--spacing-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  transition: border-color 0.2s;
+}
+
+.bom-form__textarea:focus,
+.bom-form__select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-alpha);
+}
+
+.bom-form__textarea:disabled,
+.bom-form__select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: var(--color-background-alt);
+}
+
+.bom-form__error {
+  font-size: var(--font-size-sm);
+  color: var(--color-danger);
+}
+
+.bom-form__error-message {
+  padding: var(--spacing-3);
+  background-color: var(--color-danger-alpha);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-sm);
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+}
+
+.bom-form__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--color-border);
+}

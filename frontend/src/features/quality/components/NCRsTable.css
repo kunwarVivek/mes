@@ -1,0 +1,66 @@
+.ncrs-table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.ncrs-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--color-surface);
+  border-radius: var(--radius-md);
+}
+
+.ncrs-table thead {
+  background-color: var(--color-surface-raised);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ncrs-table th {
+  padding: var(--spacing-md);
+  text-align: left;
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ncrs-table td {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+}
+
+.ncrs-table tbody tr:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.ncrs-table-row-clickable {
+  cursor: pointer;
+}
+
+.ncrs-table-cell-code {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.ncrs-table-cell-description {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ncrs-table-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.ncrs-table-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}

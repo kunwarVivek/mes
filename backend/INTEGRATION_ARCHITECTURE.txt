@@ -1,0 +1,117 @@
+MES MODULES INTEGRATION ARCHITECTURE
+=====================================
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                       PRESENTATION LAYER (API)                      │
+│                                                                     │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐           │
+│  │ Machines │  │ Quality  │  │  Shifts  │  │Maintenan.│           │
+│  │  Router  │  │  Router  │  │  Router  │  │  Router  │           │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘           │
+│       │             │             │             │                  │
+└───────┼─────────────┼─────────────┼─────────────┼──────────────────┘
+        │             │             │             │
+        │             │             │             │
+┌───────┼─────────────┼─────────────┼─────────────┼──────────────────┐
+│       │             │             │             │                  │
+│  ┌────▼─────┐  ┌───▼──────┐  ┌───▼──────┐  ┌──▼───────┐           │
+│  │ Machine  │  │   NCR    │  │  Shift   │  │   PM     │           │
+│  │Repository│  │Repository│  │Repository│  │Repository│           │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘           │
+│       │             │             │             │                  │
+│                   INFRASTRUCTURE LAYER                             │
+└───────┼─────────────┼─────────────┼─────────────┼──────────────────┘
+        │             │             │             │
+        │             │             │             │
+┌───────┼─────────────┼─────────────┼─────────────┼──────────────────┐
+│       │             │             │             │                  │
+│  ┌────▼─────┐  ┌───▼──────┐  ┌───▼──────┐  ┌──▼───────┐           │
+│  │ Machine  │  │   NCR    │  │  Shift   │  │PMSchedule│           │
+│  │  Model   │  │  Model   │  │  Model   │  │  Model   │           │
+│  │          │  │          │  │          │  │          │           │
+│  │   org_id │  │   org_id │  │   org_id │  │   org_id │           │
+│  │  plant_id│  │  plant_id│  │  plant_id│  │  plant_id│           │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘           │
+│       │             │             │             │                  │
+│                      PERSISTENCE LAYER                             │
+└───────┼─────────────┼─────────────┼─────────────┼──────────────────┘
+        │             │             │             │
+        └─────────────┴─────────────┴─────────────┘
+                      │
+        ┌─────────────▼─────────────┐
+        │                           │
+        │     PostgreSQL + RLS      │
+        │   + TimescaleDB (status)  │
+        │                           │
+        └───────────────────────────┘
+
+
+INTEGRATION POINTS (Foreign Keys)
+==================================
+
+NCR ─────────┬─── work_order_id ───► WorkOrder
+             └─── material_id ─────► Material
+
+InspectionLog ──┬─ work_order_id ───► WorkOrder
+                └─ material_id ─────► Material
+
+DowntimeEvent ─── machine_id ──────► Machine
+
+PMSchedule ────── machine_id ──────► Machine
+
+MachineStatusHistory ─ machine_id ─► Machine
+
+
+MULTI-TENANCY ENFORCEMENT
+==========================
+
+All tables have:
+  - organization_id (NOT NULL, indexed)
+  - plant_id (nullable, indexed)
+
+RLS Policies (MISSING - Need SQL scripts):
+  - machine: filter by org_id, plant_id
+  - ncr: filter by org_id, plant_id
+  - shift: filter by org_id, plant_id
+  - pm_schedule: filter by org_id, plant_id
+  - downtime_event: filter by org_id, plant_id
+
+
+MISSING INTEGRATIONS
+====================
+
+1. User Foreign Keys
+   ✗ created_by (all tables) → users.id
+   ✗ updated_by (all tables) → users.id
+   ✗ assignee_id (NCR) → users.id
+   ✗ resolved_by_user_id (NCR) → users.id
+   ✗ logged_by_user_id (ShiftHandover) → users.id
+   ✗ acknowledged_by_user_id (ShiftHandover) → users.id
+
+2. Machine-WorkOrder Assignment
+   ✗ No work_order_id on Machine
+   ✗ No WorkOrderMachine junction table
+
+3. TimescaleDB Hypertables
+   ✗ machine_status_history (needs conversion)
+   ✗ downtime_event (needs conversion)
+
+
+BLOCKER: DUPLICATE USER MODEL
+==============================
+
+┌─────────────────────────────────┐    ┌─────────────────────────────┐
+│  app/models/user.py             │    │ app/infrastructure/         │
+│                                 │    │   persistence/models.py     │
+│  class User(Base):              │    │                             │
+│    __tablename__ = "users"      │    │ class UserModel(Base):      │
+│                                 │    │   __tablename__ = "users"   │
+│  [Direct Pattern]               │    │                             │
+│                                 │    │ [Clean Architecture]        │
+└─────────────────────────────────┘    └─────────────────────────────┘
+             │                                      │
+             └──────────────┬───────────────────────┘
+                            │
+                            ▼
+                  ❌ CONFLICT: Same table
+                     SQLAlchemy MetaData error

@@ -1,0 +1,108 @@
+/* Sidebar Base Styles */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  background-color: var(--color-background);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  z-index: 40;
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Sidebar Header (for close button in temporary mode) */
+.sidebar__header {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sidebar__close-button {
+  margin-left: auto;
+}
+
+/* Sidebar Content */
+.sidebar__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-md);
+}
+
+/* Permanent Variant (Desktop) */
+.sidebar--permanent {
+  width: 260px;
+}
+
+.sidebar--permanent.sidebar--open {
+  transform: translateX(0);
+}
+
+.sidebar--permanent.sidebar--closed {
+  transform: translateX(-100%);
+}
+
+/* Temporary Variant (Mobile Drawer) */
+.sidebar--temporary {
+  width: 280px;
+  box-shadow: var(--shadow-lg);
+}
+
+.sidebar--temporary.sidebar--open {
+  transform: translateX(0);
+}
+
+.sidebar--temporary.sidebar--closed {
+  transform: translateX(-100%);
+}
+
+/* Backdrop for temporary sidebar */
+.sidebar__backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 30;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Responsive Behavior */
+@media (max-width: 768px) {
+  .sidebar--permanent {
+    width: 280px;
+  }
+}
+
+/* Focus Styles */
+.sidebar:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Scrollbar Styling */
+.sidebar__content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar__content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar__content::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+.sidebar__content::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}

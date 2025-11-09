@@ -1,0 +1,101 @@
+/* Radio Container */
+.radio-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Radio Base */
+.radio {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  outline: none;
+}
+
+.radio:focus-visible .radio__button {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* Radio Button */
+.radio__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 2px solid #d1d5db;
+  background-color: white;
+  transition: all 0.2s ease;
+}
+
+.radio--checked .radio__button {
+  border-color: #3b82f6;
+  background-color: white;
+}
+
+/* Radio Indicator (Inner Circle) */
+.radio__indicator {
+  border-radius: 50%;
+  background-color: #3b82f6;
+  transition: transform 0.2s ease;
+}
+
+/* Sizes */
+.radio--sm .radio__button {
+  width: 1rem;
+  height: 1rem;
+}
+
+.radio--sm .radio__indicator {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+.radio--md .radio__button {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.radio--md .radio__indicator {
+  width: 0.625rem;
+  height: 0.625rem;
+}
+
+.radio--lg .radio__button {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.radio--lg .radio__indicator {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+/* Hover State */
+.radio:hover:not(.radio--disabled) .radio__button {
+  border-color: #3b82f6;
+}
+
+/* Disabled State */
+.radio--disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.radio--disabled .radio__button {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+/* Label */
+.radio__label {
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.radio--disabled + .radio__label {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

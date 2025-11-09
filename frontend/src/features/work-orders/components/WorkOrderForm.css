@@ -1,0 +1,62 @@
+/* WorkOrderForm Component Styles */
+
+.work-order-form {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.work-order-form__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.work-order-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.work-order-form__label {
+  font-weight: 500;
+  color: var(--color-gray-700);
+  font-size: 0.875rem;
+}
+
+.work-order-form__required {
+  color: var(--color-red-500);
+}
+
+.work-order-form__select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-gray-300);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  transition: border-color 0.2s;
+}
+
+.work-order-form__select:focus {
+  outline: none;
+  border-color: var(--color-blue-500);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.work-order-form__select:disabled {
+  background-color: var(--color-gray-100);
+  cursor: not-allowed;
+}
+
+.work-order-form__error-message {
+  padding: 0.75rem;
+  background-color: var(--color-red-50);
+  border: 1px solid var(--color-red-200);
+  border-radius: 0.375rem;
+  color: var(--color-red-700);
+  font-size: 0.875rem;
+}
+
+.work-order-form__actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}

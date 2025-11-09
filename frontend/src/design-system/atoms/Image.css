@@ -1,0 +1,59 @@
+/* Image Atom Styles */
+
+.image {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  width: 100%;
+}
+
+.image__img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.image__img--loaded {
+  opacity: 1;
+}
+
+/* Object Fit Variants */
+.image__img--cover {
+  object-fit: cover;
+}
+
+.image__img--contain {
+  object-fit: contain;
+}
+
+.image__img--fill {
+  object-fit: fill;
+}
+
+.image__img--none {
+  object-fit: none;
+}
+
+/* Fallback */
+.image__fallback {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-neutral-100);
+  color: var(--color-neutral-600);
+}
+
+/* Loading State */
+.image .skeleton {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}

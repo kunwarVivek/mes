@@ -6,7 +6,7 @@ services:
   # Replaces: Redis, Celery, RabbitMQ, Elasticsearch
   # ============================================================================
   postgres:
-    image: tembo/tembo-pg-slim:latest  # Includes all PostgreSQL extensions
+    image: timescale/timescaledb:latest-pg16  # PostgreSQL 16 with TimescaleDB
     container_name: unison-postgres
     environment:
       POSTGRES_USER: unison
@@ -14,8 +14,7 @@ services:
       POSTGRES_DB: unison_erp
     command: >
       postgres
-      -c shared_preload_libraries='pg_cron,timescaledb,pgmq'
-      -c cron.database_name='unison_erp'
+      -c shared_preload_libraries='timescaledb'
       -c shared_buffers='4GB'
       -c effective_cache_size='12GB'
       -c maintenance_work_mem='1GB'

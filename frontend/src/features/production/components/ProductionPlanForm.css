@@ -1,0 +1,92 @@
+.production-plan-form {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.production-plan-form__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.production-plan-form__section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.production-plan-form__section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: var(--color-gray-900);
+}
+
+.production-plan-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.production-plan-form__label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-gray-700);
+}
+
+.production-plan-form__required {
+  color: var(--color-red-500);
+}
+
+.production-plan-form__select,
+.production-plan-form__textarea {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-gray-300);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  transition: border-color 0.2s;
+}
+
+.production-plan-form__select:focus,
+.production-plan-form__textarea:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px var(--color-primary-100);
+}
+
+.production-plan-form__select:disabled,
+.production-plan-form__textarea:disabled {
+  background-color: var(--color-gray-100);
+  cursor: not-allowed;
+}
+
+.production-plan-form__textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.production-plan-form__error {
+  font-size: 0.75rem;
+  color: var(--color-red-500);
+}
+
+.production-plan-form__error-message {
+  padding: 0.75rem;
+  background-color: var(--color-red-50);
+  border: 1px solid var(--color-red-200);
+  border-radius: 0.375rem;
+  color: var(--color-red-700);
+  font-size: 0.875rem;
+}
+
+.production-plan-form__actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+  .production-plan-form__actions {
+    flex-direction: column;
+  }
+}

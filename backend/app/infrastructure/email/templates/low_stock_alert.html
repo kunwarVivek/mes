@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Low Stock Alert</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #e74c3c;">Low Stock Alert</h2>
+        <p>The following material has reached the reorder point:</p>
+
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Material Code:</strong></td>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ material_code }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Description:</strong></td>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ material_description }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Current Stock:</strong></td>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd; color: #e74c3c;">{{ current_stock }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Reorder Point:</strong></td>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ reorder_point }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Warehouse:</strong></td>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ warehouse }}</td>
+            </tr>
+        </table>
+
+        <p style="background-color: #fff3cd; padding: 10px; border-left: 4px solid #ffc107;">
+            <strong>Action Required:</strong> Please review and create a purchase order if needed.
+        </p>
+
+        <p style="color: #7f8c8d; font-size: 12px; margin-top: 30px;">
+            This is an automated notification from Unison ERP.
+        </p>
+    </div>
+</body>
+</html>
