@@ -1,11 +1,12 @@
 from fastapi import APIRouter
-from app.presentation.api.v1 import users, auth, materials, machines, quality, shifts, maintenance, organizations, plants, departments, projects, production_logs, lanes, bom, roles, custom_fields
+from app.presentation.api.v1 import users, auth, materials, machines, quality, shifts, maintenance, organizations, plants, departments, projects, production_logs, lanes, bom, roles, custom_fields, workflows
 
 api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
 api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(roles.router, prefix="/roles", tags=["rbac"])
 api_router.include_router(custom_fields.router, tags=["configuration"])
+api_router.include_router(workflows.router, tags=["workflow-engine"])
 api_router.include_router(organizations.router, prefix="/organizations", tags=["organizations"])
 api_router.include_router(plants.router, prefix="/plants", tags=["plants"])
 api_router.include_router(departments.router, prefix="/departments", tags=["departments"])

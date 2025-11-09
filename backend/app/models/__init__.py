@@ -45,6 +45,16 @@ from app.models.production_log import ProductionLog
 from app.models.lane import Lane, LaneAssignment
 from app.models.role import Role, UserRole, UserPlantAccess
 from app.models.custom_field import CustomField, FieldValue, TypeList, TypeListValue
+from app.models.workflow import (
+    Workflow,
+    WorkflowState,
+    WorkflowTransition,
+    Approval,
+    WorkflowHistory,
+    StateType,
+    ApprovalStatus,
+    ApprovalPriority
+)
 
 __all__ = [
     "User",
@@ -89,5 +99,13 @@ __all__ = [
     "CustomField",
     "FieldValue",
     "TypeList",
-    "TypeListValue"
+    "TypeListValue",
+    "Workflow",
+    "WorkflowState",
+    "WorkflowTransition",
+    "Approval",
+    "WorkflowHistory",
+    "StateType",
+    "ApprovalStatus",
+    "ApprovalPriority"
 ]

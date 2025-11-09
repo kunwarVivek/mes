@@ -1,3 +1,49 @@
 from app.application.dtos.user_dto import CreateUserDTO, UpdateUserDTO, UserResponseDTO
+from app.application.dtos.workflow_dto import (
+    WorkflowCreateDTO,
+    WorkflowUpdateDTO,
+    WorkflowResponse,
+    WorkflowStateCreateDTO,
+    WorkflowStateUpdateDTO,
+    WorkflowStateResponse,
+    WorkflowTransitionCreateDTO,
+    WorkflowTransitionUpdateDTO,
+    WorkflowTransitionResponse,
+    ApprovalCreateDTO,
+    ApprovalActionDTO,
+    ApprovalUpdateDTO,
+    ApprovalResponse,
+    WorkflowHistoryResponse,
+    EntityWorkflowStatusResponse,
+    WorkflowTransitionExecuteDTO,
+    WorkflowStateChangeDTO,
+    StateType,
+    ApprovalStatus,
+    ApprovalPriority
+)
 
-__all__ = ["CreateUserDTO", "UpdateUserDTO", "UserResponseDTO"]
+__all__ = [
+    "CreateUserDTO",
+    "UpdateUserDTO",
+    "UserResponseDTO",
+    "WorkflowCreateDTO",
+    "WorkflowUpdateDTO",
+    "WorkflowResponse",
+    "WorkflowStateCreateDTO",
+    "WorkflowStateUpdateDTO",
+    "WorkflowStateResponse",
+    "WorkflowTransitionCreateDTO",
+    "WorkflowTransitionUpdateDTO",
+    "WorkflowTransitionResponse",
+    "ApprovalCreateDTO",
+    "ApprovalActionDTO",
+    "ApprovalUpdateDTO",
+    "ApprovalResponse",
+    "WorkflowHistoryResponse",
+    "EntityWorkflowStatusResponse",
+    "WorkflowTransitionExecuteDTO",
+    "WorkflowStateChangeDTO",
+    "StateType",
+    "ApprovalStatus",
+    "ApprovalPriority"
+]
