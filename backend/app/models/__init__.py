@@ -43,6 +43,7 @@ from app.models.inspection import (
 from app.models.project import Project
 from app.models.production_log import ProductionLog
 from app.models.lane import Lane, LaneAssignment
+from app.models.role import Role, UserRole, UserPlantAccess
 
 __all__ = [
     "User",
@@ -80,5 +81,8 @@ __all__ = [
     "Project",
     "ProductionLog",
     "Lane",
-    "LaneAssignment"
+    "LaneAssignment",
+    "Role",
+    "UserRole",
+    "UserPlantAccess"
 ]
