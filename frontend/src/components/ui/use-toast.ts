@@ -5,6 +5,7 @@ export interface ToastProps {
   variant?: 'default' | 'destructive'
 }
 
-export function toast(props: ToastProps) {
-  console.log('Toast:', props)
+export function toast(_props: ToastProps) {
+  // TODO: Implement proper toast notification system
+  // For now, this is a placeholder function
 }

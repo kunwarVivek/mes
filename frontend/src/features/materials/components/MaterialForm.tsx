@@ -25,6 +25,7 @@ import {
 import { useMaterialMutations } from '../hooks/useMaterialMutations'
 import type { Material } from '../types/material.types'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth.store'
 
 export interface MaterialFormProps {
   materialId?: number
@@ -35,6 +36,7 @@ export interface MaterialFormProps {
 export function MaterialForm({ materialId, onSuccess, defaultValues }: MaterialFormProps) {
   const isEditMode = !!materialId
   const { createMaterial, updateMaterial } = useMaterialMutations()
+  const { currentOrg, currentPlant } = useAuthStore()
 
   const initialFormValues = isEditMode
     ? {
@@ -50,8 +52,8 @@ export function MaterialForm({ materialId, onSuccess, defaultValues }: MaterialF
         lead_time_days: defaultValues?.lead_time_days || 0,
       }
     : {
-        organization_id: defaultValues?.organization_id || 1,
-        plant_id: defaultValues?.plant_id || 1,
+        organization_id: defaultValues?.organization_id || currentOrg?.id,
+        plant_id: defaultValues?.plant_id || currentPlant?.id,
         material_number: '',
         material_name: '',
         description: '',

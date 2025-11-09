@@ -1,4 +1,10 @@
 import '@testing-library/jest-dom'
+import DOMPurify from 'dompurify'
+
+// Initialize DOMPurify with jsdom window
+if (typeof window !== 'undefined') {
+  DOMPurify.sanitize('<div>test</div>')
+}
 
 // Mock localStorage with actual storage
 class LocalStorageMock {
