@@ -44,6 +44,7 @@ from app.models.project import Project
 from app.models.production_log import ProductionLog
 from app.models.lane import Lane, LaneAssignment
 from app.models.role import Role, UserRole, UserPlantAccess
+from app.models.custom_field import CustomField, FieldValue, TypeList, TypeListValue
 
 __all__ = [
     "User",
@@ -84,5 +85,9 @@ __all__ = [
     "LaneAssignment",
     "Role",
     "UserRole",
-    "UserPlantAccess"
+    "UserPlantAccess",
+    "CustomField",
+    "FieldValue",
+    "TypeList",
+    "TypeListValue"
 ]
