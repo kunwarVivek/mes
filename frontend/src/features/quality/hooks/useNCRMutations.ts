@@ -1,44 +1,56 @@
 /**
- * NCR Mutation Hooks
+ * useNCRMutations Hook
  *
- * TanStack Query mutation hooks for NCR operations
+ * TanStack Query mutations for NCR operations
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useToast } from '@/components/ui/use-toast'
 import { ncrService } from '../services/ncr.service'
-import { NCRS_QUERY_KEY, NCR_QUERY_KEY } from './useNCRs'
-import type { CreateNCRDTO, UpdateNCRDTO } from '../types/ncr.types'
+import type { CreateNCRFormData, UpdateNCRStatusFormData } from '../schemas/ncr.schema'
 
-export function useCreateNCR() {
+export function useNCRMutations() {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
 
-  return useMutation({
-    mutationFn: (data: CreateNCRDTO) => ncrService.create(data),
+  const createNCR = useMutation({
+    mutationFn: (data: CreateNCRFormData) => ncrService.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [NCRS_QUERY_KEY] })
+      queryClient.invalidateQueries({ queryKey: ['ncrs'] })
+      toast({
+        title: 'Success',
+        description: 'NCR created successfully',
+      })
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to create NCR',
+        variant: 'destructive',
+      })
     },
   })
-}
 
-export function useUpdateNCR() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateNCRDTO }) =>
-      ncrService.update(id, data),
+  const updateNCRStatus = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateNCRStatusFormData }) =>
+      ncrService.updateStatus(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [NCRS_QUERY_KEY] })
-      queryClient.invalidateQueries({ queryKey: [NCR_QUERY_KEY] })
+      queryClient.invalidateQueries({ queryKey: ['ncrs'] })
+      toast({
+        title: 'Success',
+        description: 'NCR status updated successfully',
+      })
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to update NCR status',
+        variant: 'destructive',
+      })
     },
   })
-}
 
-export function useDeleteNCR() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: (id: number) => ncrService.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [NCRS_QUERY_KEY] })
-    },
-  })
+  return {
+    createNCR,
+    updateNCRStatus,
+  }
 }

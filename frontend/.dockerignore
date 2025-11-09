@@ -1,0 +1,88 @@
+# Dependencies
+node_modules/
+
+# Testing
+coverage/
+.nyc_output/
+*.spec.ts
+*.spec.tsx
+*.test.ts
+*.test.tsx
+__tests__/
+test/
+vitest.config.ts
+
+# Build outputs
+dist/
+build/
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+.turbo/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# TypeScript
+*.tsbuildinfo
+*.tsbuildinfo.*
+tsconfig.*.json
+!tsconfig.json
+
+# Vite
+.vite/
+vite.config.*.timestamp*
+
+# Storybook
+.storybook/
+*.stories.tsx
+*.stories.ts
+
+# Claude AI
+.claude/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# Source maps (optional - uncomment if you don't want them in production)
+# *.map
+
+# Public assets that change frequently
+# Uncomment if you have large files that shouldn't be in the image
+# public/videos/
+# public/large-assets/

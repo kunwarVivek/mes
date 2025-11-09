@@ -1,18 +1,27 @@
 import { createRoute } from '@tanstack/react-router'
 import { authenticatedRoute } from './_authenticated'
-import { MaterialsPage } from '../features/materials/pages/MaterialsPage'
+import { MaterialListPage } from '../features/materials/pages/MaterialListPage'
+import { MaterialFormPage } from '../features/materials/pages/MaterialFormPage'
 
 /**
- * Materials Route (/materials)
+ * Materials Routes
  *
- * Materials management route:
- * - Single Responsibility: Materials route config
- * - Protected: Requires authentication
- * - Component: MaterialsPage
+ * Materials management routes:
+ * - /materials - Material list view
+ * - /materials/new - Create new material
+ *
+ * Single Responsibility: Materials route configuration
+ * Protected: Requires authentication
  */
 
 export const materialsRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/materials',
-  component: MaterialsPage,
+  component: MaterialListPage,
+})
+
+export const materialsNewRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/materials/new',
+  component: MaterialFormPage,
 })

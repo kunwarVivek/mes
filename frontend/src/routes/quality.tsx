@@ -1,18 +1,36 @@
-import { createRoute } from '@tanstack/react-router'
+import { createRoute, redirect } from '@tanstack/react-router'
 import { authenticatedRoute } from './_authenticated'
-import { QualityPage } from '../features/quality/pages/QualityPage'
+import { NCRListPage } from '../features/quality/pages/NCRListPage'
+import { NCRFormPage } from '../features/quality/pages/NCRFormPage'
 
 /**
- * Quality Route (/quality)
+ * Quality Routes
  *
- * Quality control route:
- * - Single Responsibility: Quality route config
- * - Protected: Requires authentication
- * - Component: QualityPage
+ * Quality management routes:
+ * - /quality - Redirects to /quality/ncrs
+ * - /quality/ncrs - NCR list view
+ * - /quality/ncrs/new - Create new NCR
+ *
+ * Single Responsibility: Quality route configuration
+ * Protected: Requires authentication
  */
 
 export const qualityRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/quality',
-  component: QualityPage,
+  beforeLoad: () => {
+    throw redirect({ to: '/quality/ncrs' })
+  },
+})
+
+export const qualityNcrsRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/quality/ncrs',
+  component: NCRListPage,
+})
+
+export const qualityNcrsNewRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/quality/ncrs/new',
+  component: NCRFormPage,
 })

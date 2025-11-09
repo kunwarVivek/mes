@@ -1,0 +1,85 @@
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment files (keep example files)
+.env
+.env.*
+!.env.example
+
+# Python
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class
+**/*.so
+.Python
+**/venv/
+**/env/
+**/ENV/
+**/.pytest_cache/
+**/.coverage
+**/htmlcov/
+**/coverage.xml
+
+# Node
+**/node_modules/
+**/dist/
+**/build/
+**/.cache/
+**/coverage/
+**/*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database data directories
+postgres_data/
+database/postgres_data/
+
+# Logs
+*.log
+logs/
+**/logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# Claude AI
+.claude/
+
+# Testing
+**/tests/
+**/__tests__/
+**/*.test.*
+**/*.spec.*
+
+# Scripts and examples
+backend/scripts/
+backend/examples/
+backend/claudedocs/
+
+# Build artifacts
+backend/build/
+backend/dist/
+frontend/build/
+frontend/dist/

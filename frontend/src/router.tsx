@@ -4,11 +4,11 @@ import { authenticatedRoute } from './routes/_authenticated'
 import { indexRoute } from './routes/index'
 import { loginRoute } from './routes/login'
 import { registerRoute } from './routes/register'
-import { materialsRoute } from './routes/materials'
+import { materialsRoute, materialsNewRoute } from './routes/materials'
 import { usersRoute } from './routes/users'
-import { workOrdersRoute } from './routes/work-orders'
+import { workOrdersRoute, workOrdersNewRoute } from './routes/work-orders'
 import { bomRoute } from './routes/bom'
-import { qualityRoute } from './routes/quality'
+import { qualityRoute, qualityNcrsRoute, qualityNcrsNewRoute } from './routes/quality'
 import { equipmentRoute } from './routes/equipment'
 
 /**
@@ -26,11 +26,15 @@ import { equipmentRoute } from './routes/equipment'
  *   - /register (public)
  *   - /_authenticated (layout + auth guard)
  *     - / (dashboard)
- *     - /materials
+ *     - /materials (list)
+ *     - /materials/new (create)
  *     - /users
- *     - /work-orders
+ *     - /work-orders (list)
+ *     - /work-orders/new (create)
  *     - /bom
- *     - /quality
+ *     - /quality (redirects to /quality/ncrs)
+ *     - /quality/ncrs (NCR list)
+ *     - /quality/ncrs/new (create NCR)
  *     - /equipment
  */
 
@@ -41,10 +45,14 @@ const routeTree = rootRoute.addChildren([
   authenticatedRoute.addChildren([
     indexRoute,
     materialsRoute,
+    materialsNewRoute,
     usersRoute,
     workOrdersRoute,
+    workOrdersNewRoute,
     bomRoute,
     qualityRoute,
+    qualityNcrsRoute,
+    qualityNcrsNewRoute,
     equipmentRoute,
   ]),
 ])

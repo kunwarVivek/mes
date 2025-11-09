@@ -44,7 +44,7 @@ export function Skeleton({
     styles.height = typeof height === 'number' ? `${height}px` : height
   }
 
-  return <div className={classes} style={styles} aria-hidden="true" />
+  return <div className={classes} style={styles} aria-hidden="true" data-testid="skeleton" />
 }
 
 Skeleton.displayName = 'Skeleton'

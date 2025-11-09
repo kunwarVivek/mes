@@ -18,30 +18,57 @@ export const createNCRSchema = z.object({
   defect_type: defectTypeSchema,
   defect_description: z
     .string()
-    .min(10, 'Description must be at least 10 characters')
-    .max(500, 'Description must be at most 500 characters'),
+    .min(1, 'Defect description is required')
+    .max(500, 'Defect description must be at most 500 characters'),
   quantity_defective: z.number().positive('Quantity defective must be positive'),
   reported_by_user_id: z.number().positive('Reporter user ID must be positive'),
-  attachment_urls: z.array(z.string().url('Invalid URL')).optional(),
+  attachment_urls: z.array(z.string()).optional(),
 })
 
-export const updateNCRStatusSchema = z.object({
-  status: ncrStatusSchema,
-  resolution_notes: z
-    .string()
-    .max(1000, 'Resolution notes must be at most 1000 characters')
-    .optional(),
-  resolved_by_user_id: z.number().positive('Resolver user ID must be positive').optional(),
-}).refine(
-  (data) => {
-    // Resolution notes required when resolving
-    if (data.status === 'RESOLVED' && !data.resolution_notes) {
-      return false
+export const updateNCRStatusSchema = z
+  .object({
+    status: ncrStatusSchema,
+    resolution_notes: z.string().optional(),
+    resolved_by_user_id: z.number().optional(),
+  })
+  .refine(
+    data => {
+      // If status is RESOLVED, resolution_notes must be provided and non-empty
+      if (data.status === 'RESOLVED') {
+        return data.resolution_notes && data.resolution_notes.trim().length > 0
+      }
+      return true
+    },
+    {
+      message: 'Resolution notes are required when status is RESOLVED',
+      path: ['resolution_notes'],
     }
-    return true
-  },
-  { message: 'Resolution notes required when resolving NCR', path: ['resolution_notes'] }
-)
+  )
 
+// NCRResponse schema
+export const ncrResponseSchema = z.object({
+  id: z.number(),
+  organization_id: z.number(),
+  plant_id: z.number(),
+  ncr_number: z.string(),
+  work_order_id: z.number(),
+  material_id: z.number(),
+  defect_type: z.string(),
+  defect_description: z.string(),
+  quantity_defective: z.number(),
+  status: z.string(),
+  reported_by_user_id: z.number(),
+  attachment_urls: z.array(z.string()).optional(),
+  resolution_notes: z.string().optional(),
+  resolved_by_user_id: z.number().optional(),
+  resolved_at: z.coerce.date().optional(),
+  created_at: z.coerce.date(),
+  updated_at: z.coerce.date().optional(),
+})
+
+// Type exports
+export type NCRStatus = z.infer<typeof ncrStatusSchema>
+export type DefectType = z.infer<typeof defectTypeSchema>
 export type CreateNCRFormData = z.infer<typeof createNCRSchema>
 export type UpdateNCRStatusFormData = z.infer<typeof updateNCRStatusSchema>
+export type NCR = z.infer<typeof ncrResponseSchema>

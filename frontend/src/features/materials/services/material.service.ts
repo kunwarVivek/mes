@@ -3,64 +3,83 @@
  *
  * API client for Material CRUD operations
  */
-import axios from 'axios'
-import type {
-  Material,
-  CreateMaterialDTO,
-  UpdateMaterialDTO,
-  MaterialListResponse,
-  MaterialFilters,
-} from '../types/material.types'
+import apiClient from '@/lib/api-client'
+import type { CreateMaterialFormData, UpdateMaterialFormData } from '../schemas/material.schema'
 
-const API_URL = '/api/v1/materials'
+export interface Material {
+  id: number
+  organization_id: number
+  plant_id: number
+  material_number: string
+  material_name: string
+  description?: string
+  material_category_id: number
+  base_uom_id: number
+  procurement_type: string
+  mrp_type: string
+  safety_stock: number
+  reorder_point: number
+  lot_size: number
+  lead_time_days: number
+  is_active: boolean
+  created_at: string
+  updated_at?: string
+}
+
+export interface MaterialListResponse {
+  items: Material[]
+  total: number
+  page: number
+  page_size: number
+  total_pages: number
+}
+
+export interface MaterialListParams {
+  page?: number
+  page_size?: number
+  search?: string
+  procurement_type?: string
+  mrp_type?: string
+  is_active?: boolean
+}
 
 export const materialService = {
   /**
-   * Get all materials with optional filters
+   * List materials with optional filters and pagination
    */
-  getAll: async (filters?: MaterialFilters): Promise<MaterialListResponse> => {
-    const { data } = await axios.get(API_URL, { params: filters })
+  list: async (params?: MaterialListParams): Promise<MaterialListResponse> => {
+    const { data } = await apiClient.get<MaterialListResponse>('/materials', { params })
     return data
   },
 
   /**
    * Get material by ID
    */
-  getById: async (id: number): Promise<Material> => {
-    const { data } = await axios.get(`${API_URL}/${id}`)
+  get: async (id: number): Promise<Material> => {
+    const { data } = await apiClient.get<Material>(`/materials/${id}`)
     return data
   },
 
   /**
    * Create new material
    */
-  create: async (material: CreateMaterialDTO): Promise<Material> => {
-    const { data } = await axios.post(API_URL, material)
+  create: async (material: CreateMaterialFormData): Promise<Material> => {
+    const { data } = await apiClient.post<Material>('/materials', material)
     return data
   },
 
   /**
    * Update existing material
    */
-  update: async (id: number, material: UpdateMaterialDTO): Promise<Material> => {
-    const { data } = await axios.put(`${API_URL}/${id}`, material)
+  update: async (id: number, material: UpdateMaterialFormData): Promise<Material> => {
+    const { data } = await apiClient.put<Material>(`/materials/${id}`, material)
     return data
   },
 
   /**
-   * Delete material (soft delete)
+   * Delete material
    */
   delete: async (id: number): Promise<void> => {
-    await axios.delete(`${API_URL}/${id}`)
-  },
-
-  /**
-   * Search materials by query
-   */
-  search: async (query: string, limit: number = 20): Promise<Material[]> => {
-    const { data } = await axios.get(`${API_URL}/search`, {
-      params: { q: query, limit },
-    })
-    return data
+    await apiClient.delete(`/materials/${id}`)
   },
 }

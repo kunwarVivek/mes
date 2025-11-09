@@ -62,3 +62,47 @@ coverage.xml
 # Logs
 *.log
 logs/
+
+# Claude AI Memory & Cache
+.claude/
+*.claude/
+
+# TypeScript
+*.tsbuildinfo
+*.tsbuildinfo.*
+
+# Vite
+.vite/
+vite.config.*.timestamp*
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Alembic
+alembic.ini.bak
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~.nib
+.DS_Store?
+
+# Merge and patch files
+*.orig
+*.rej
+*.patch
+
+# Archive files
+*.tar
+*.tar.gz
+*.zip
+*.7z
+*.rar
+
+# Session files
+current_session.txt
+session_metrics.json

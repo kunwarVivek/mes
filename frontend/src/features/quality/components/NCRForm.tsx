@@ -1,210 +1,262 @@
 /**
  * NCRForm Component
  *
- * Form for creating NCRs with Zod validation
+ * Form for creating NCRs using React Hook Form + shadcn/ui
  */
-import { useState, FormEvent } from 'react'
-import { Card, Button } from '@/design-system/atoms'
-import { FormField } from '@/design-system/molecules'
-import { createNCRSchema } from '../schemas/ncr.schema'
-import type { CreateNCRDTO } from '../types/quality.types'
-import { ZodError } from 'zod'
-import './NCRForm.css'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  createNCRSchema,
+  type CreateNCRFormData,
+  type DefectType,
+} from '../schemas/ncr.schema'
+import { useNCRMutations } from '../hooks/useNCRMutations'
+import { cn } from '@/lib/utils'
 
 export interface NCRFormProps {
-  defaultWorkOrderId?: number
-  defaultMaterialId?: number
-  defaultReporterId?: number
-  onSubmit: (data: CreateNCRDTO) => Promise<void>
-  onCancel?: () => void
-  isLoading?: boolean
-  error?: string
+  onSuccess?: () => void
 }
 
-export const NCRForm = ({
-  defaultWorkOrderId,
-  defaultMaterialId,
-  defaultReporterId = 1,
-  onSubmit,
-  onCancel,
-  isLoading,
-  error,
-}: NCRFormProps) => {
-  const [formData, setFormData] = useState<Partial<CreateNCRDTO>>({
-    ncr_number: '',
-    work_order_id: defaultWorkOrderId ?? 0,
-    material_id: defaultMaterialId ?? 0,
-    defect_type: 'DIMENSIONAL',
-    defect_description: '',
-    quantity_defective: 0,
-    reported_by_user_id: defaultReporterId,
-    attachment_urls: [],
+const defectTypeOptions: { value: DefectType; label: string }[] = [
+  { value: 'DIMENSIONAL', label: 'Dimensional' },
+  { value: 'VISUAL', label: 'Visual' },
+  { value: 'FUNCTIONAL', label: 'Functional' },
+  { value: 'MATERIAL', label: 'Material' },
+  { value: 'OTHER', label: 'Other' },
+]
+
+export function NCRForm({ onSuccess }: NCRFormProps) {
+  const { createNCR } = useNCRMutations()
+
+  const form = useForm<CreateNCRFormData>({
+    resolver: zodResolver(createNCRSchema),
+    defaultValues: {
+      ncr_number: '',
+      work_order_id: undefined,
+      material_id: undefined,
+      defect_type: 'DIMENSIONAL',
+      defect_description: '',
+      quantity_defective: undefined,
+      reported_by_user_id: 1, // Default value
+      attachment_urls: [],
+    },
   })
 
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors, isSubmitting },
+    clearErrors,
+  } = form
 
-  const validate = (): boolean => {
-    try {
-      createNCRSchema.parse(formData)
-      setErrors({})
-      return true
-    } catch (e) {
-      if (e instanceof ZodError) {
-        const newErrors: Record<string, string> = {}
-        e.errors.forEach((err) => {
-          const path = err.path.join('.')
-          newErrors[path] = err.message
-        })
-        setErrors(newErrors)
+  // Clear specific field errors when user starts typing
+  useEffect(() => {
+    const subscription = watch((value, { name }) => {
+      if (name && errors[name as keyof typeof errors]) {
+        clearErrors(name as keyof typeof errors)
       }
-      return false
+    })
+    return () => subscription.unsubscribe()
+  }, [watch, errors, clearErrors])
+
+  const onSubmit = async (data: CreateNCRFormData) => {
+    try {
+      await createNCR.mutateAsync(data)
+      onSuccess?.()
+    } catch (error) {
+      // Error handled by mutation hook
     }
   }
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-
-    if (!validate()) {
-      return
-    }
-
-    await onSubmit(formData as CreateNCRDTO)
-  }
-
-  const handleChange = (field: keyof CreateNCRDTO) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
-    const value = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value
-    setFormData((prev) => ({ ...prev, [field]: value }))
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: '' }))
-    }
-  }
+  const isPending = createNCR.isPending || isSubmitting
 
   return (
-    <Card variant="elevated" padding="lg">
-      <div className="ncr-form">
-        <form onSubmit={handleSubmit} className="ncr-form__form">
-          <div className="ncr-form__section">
-            <h3 className="ncr-form__section-title">NCR Information</h3>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      {/* NCR Details */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">NCR Details</h3>
 
-            <FormField
-              label="NCR Number"
-              type="text"
-              value={formData.ncr_number}
-              onChange={handleChange('ncr_number')}
-              error={errors.ncr_number}
-              helperText="Unique NCR identifier, max 50 characters"
-              required
-              disabled={isLoading}
-            />
-
-            <FormField
-              label="Work Order ID"
-              type="number"
-              value={formData.work_order_id?.toString() ?? ''}
-              onChange={handleChange('work_order_id')}
-              error={errors.work_order_id}
-              required
-              disabled={isLoading}
-            />
-
-            <FormField
-              label="Material ID"
-              type="number"
-              value={formData.material_id?.toString() ?? ''}
-              onChange={handleChange('material_id')}
-              error={errors.material_id}
-              required
-              disabled={isLoading}
-            />
-          </div>
-
-          <div className="ncr-form__section">
-            <h3 className="ncr-form__section-title">Defect Details</h3>
-
-            <div className="ncr-form__field">
-              <label className="ncr-form__label" htmlFor="defect-type">
-                Defect Type <span className="ncr-form__required">*</span>
-              </label>
-              <select
-                id="defect-type"
-                className="ncr-form__select"
-                value={formData.defect_type}
-                onChange={handleChange('defect_type')}
-                disabled={isLoading}
-                required
-              >
-                <option value="DIMENSIONAL">Dimensional</option>
-                <option value="VISUAL">Visual</option>
-                <option value="FUNCTIONAL">Functional</option>
-                <option value="MATERIAL">Material</option>
-                <option value="OTHER">Other</option>
-              </select>
-              {errors.defect_type && (
-                <span className="ncr-form__error">{errors.defect_type}</span>
-              )}
-            </div>
-
-            <div className="ncr-form__field">
-              <label className="ncr-form__label" htmlFor="defect-description">
-                Defect Description <span className="ncr-form__required">*</span>
-              </label>
-              <textarea
-                id="defect-description"
-                className="ncr-form__textarea"
-                value={formData.defect_description}
-                onChange={handleChange('defect_description')}
-                disabled={isLoading}
-                rows={4}
-                maxLength={500}
-                placeholder="Describe the defect in detail (min 10 characters)"
-                required
-              />
-              <div className="ncr-form__helper">
-                {formData.defect_description?.length || 0} / 500 characters (min 10)
-              </div>
-              {errors.defect_description && (
-                <span className="ncr-form__error">{errors.defect_description}</span>
-              )}
-            </div>
-
-            <FormField
-              label="Quantity Defective"
-              type="number"
-              value={formData.quantity_defective?.toString() ?? ''}
-              onChange={handleChange('quantity_defective')}
-              error={errors.quantity_defective}
-              helperText="Number of defective units"
-              required
-              disabled={isLoading}
-            />
-          </div>
-
-          {error && (
-            <div className="ncr-form__error-message" role="alert">
-              {error}
-            </div>
+        {/* NCR Number */}
+        <div className="space-y-2">
+          <Label htmlFor="ncr_number">
+            NCR Number<span className="text-destructive ml-1">*</span>
+          </Label>
+          <Input
+            id="ncr_number"
+            {...register('ncr_number')}
+            disabled={isPending}
+            aria-invalid={!!errors.ncr_number}
+            className={cn(errors.ncr_number && 'border-destructive')}
+            placeholder="NCR-2025-001"
+          />
+          {errors.ncr_number && (
+            <p className="text-sm text-destructive">{errors.ncr_number.message}</p>
           )}
+          <p className="text-sm text-muted-foreground">Unique identifier, max 50 characters</p>
+        </div>
 
-          <div className="ncr-form__actions">
-            <Button type="submit" variant="primary" isLoading={isLoading} fullWidth>
-              Create NCR
-            </Button>
-            {onCancel && (
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={onCancel}
-                disabled={isLoading}
-                fullWidth
-              >
-                Cancel
-              </Button>
-            )}
-          </div>
-        </form>
+        {/* Work Order ID */}
+        <div className="space-y-2">
+          <Label htmlFor="work_order_id">
+            Work Order ID<span className="text-destructive ml-1">*</span>
+          </Label>
+          <Input
+            id="work_order_id"
+            type="number"
+            {...register('work_order_id', { valueAsNumber: true })}
+            disabled={isPending}
+            aria-invalid={!!errors.work_order_id}
+            className={cn(errors.work_order_id && 'border-destructive')}
+          />
+          {errors.work_order_id && (
+            <p className="text-sm text-destructive">{errors.work_order_id.message}</p>
+          )}
+        </div>
+
+        {/* Material ID */}
+        <div className="space-y-2">
+          <Label htmlFor="material_id">
+            Material ID<span className="text-destructive ml-1">*</span>
+          </Label>
+          <Input
+            id="material_id"
+            type="number"
+            {...register('material_id', { valueAsNumber: true })}
+            disabled={isPending}
+            aria-invalid={!!errors.material_id}
+            className={cn(errors.material_id && 'border-destructive')}
+          />
+          {errors.material_id && (
+            <p className="text-sm text-destructive">{errors.material_id.message}</p>
+          )}
+        </div>
       </div>
-    </Card>
+
+      {/* Defect Information */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Defect Information</h3>
+
+        {/* Defect Type */}
+        <div className="space-y-2">
+          <Label htmlFor="defect_type">
+            Defect Type<span className="text-destructive ml-1">*</span>
+          </Label>
+          <Select
+            value={watch('defect_type') || 'DIMENSIONAL'}
+            onValueChange={(value) => setValue('defect_type', value as DefectType)}
+            disabled={isPending}
+          >
+            <SelectTrigger id="defect_type">
+              <SelectValue placeholder="Select defect type" />
+            </SelectTrigger>
+            <SelectContent>
+              {defectTypeOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.defect_type && (
+            <p className="text-sm text-destructive">{errors.defect_type.message}</p>
+          )}
+        </div>
+
+        {/* Defect Description */}
+        <div className="space-y-2">
+          <Label htmlFor="defect_description">
+            Defect Description<span className="text-destructive ml-1">*</span>
+          </Label>
+          <Textarea
+            id="defect_description"
+            {...register('defect_description')}
+            disabled={isPending}
+            rows={4}
+            maxLength={500}
+            aria-invalid={!!errors.defect_description}
+            className={cn(errors.defect_description && 'border-destructive')}
+            placeholder="Describe the defect in detail..."
+          />
+          {errors.defect_description && (
+            <p className="text-sm text-destructive">{errors.defect_description.message}</p>
+          )}
+          <p className="text-sm text-muted-foreground">Max 500 characters</p>
+        </div>
+
+        {/* Quantity Defective */}
+        <div className="space-y-2">
+          <Label htmlFor="quantity_defective">
+            Quantity Defective<span className="text-destructive ml-1">*</span>
+          </Label>
+          <Input
+            id="quantity_defective"
+            type="number"
+            step="0.01"
+            {...register('quantity_defective', { valueAsNumber: true })}
+            disabled={isPending}
+            aria-invalid={!!errors.quantity_defective}
+            className={cn(errors.quantity_defective && 'border-destructive')}
+          />
+          {errors.quantity_defective && (
+            <p className="text-sm text-destructive">{errors.quantity_defective.message}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Reporter Information */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Reporter Information</h3>
+
+        {/* Reported By User ID */}
+        <div className="space-y-2">
+          <Label htmlFor="reported_by_user_id">
+            Reported By User ID<span className="text-destructive ml-1">*</span>
+          </Label>
+          <Input
+            id="reported_by_user_id"
+            type="number"
+            {...register('reported_by_user_id', { valueAsNumber: true })}
+            disabled={isPending}
+            aria-invalid={!!errors.reported_by_user_id}
+            className={cn(errors.reported_by_user_id && 'border-destructive')}
+          />
+          {errors.reported_by_user_id && (
+            <p className="text-sm text-destructive">{errors.reported_by_user_id.message}</p>
+          )}
+          <p className="text-sm text-muted-foreground">User ID of person reporting the NCR</p>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex gap-4">
+        <Button type="submit" disabled={isPending} className="flex-1">
+          {isPending ? 'Submitting...' : 'Create NCR'}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => reset()}
+          disabled={isPending}
+          className="flex-1"
+        >
+          Reset
+        </Button>
+      </div>
+    </form>
   )
 }

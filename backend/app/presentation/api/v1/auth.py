@@ -29,7 +29,9 @@ def login(
             access_token=token.access_token,
             refresh_token=token.refresh_token,
             token_type=token.token_type,
-            expires_at=token.expires_at
+            expires_at=token.expires_at,
+            organization_id=token.organization_id,
+            plant_id=token.plant_id
         )
 
     except EntityNotFoundException as e:
@@ -63,7 +65,9 @@ def refresh_token(
             access_token=token.access_token,
             refresh_token=token.refresh_token,
             token_type=token.token_type,
-            expires_at=token.expires_at
+            expires_at=token.expires_at,
+            organization_id=token.organization_id,
+            plant_id=token.plant_id
         )
 
     except DomainValidationException as e:

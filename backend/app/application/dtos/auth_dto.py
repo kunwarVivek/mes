@@ -10,11 +10,13 @@ class LoginDTO(BaseModel):
 
 
 class TokenResponseDTO(BaseModel):
-    """DTO for token response"""
+    """DTO for token response with tenant context"""
     access_token: str
     refresh_token: Optional[str] = None
     token_type: str = "bearer"
     expires_at: Optional[datetime] = None
+    organization_id: Optional[int] = None
+    plant_id: Optional[int] = None
 
 
 class RefreshTokenDTO(BaseModel):

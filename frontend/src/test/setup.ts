@@ -33,3 +33,34 @@ class ResizeObserverMock {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (global as any).ResizeObserver = ResizeObserverMock
+
+// Mock hasPointerCapture and scrollIntoView for Radix UI components
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+if (typeof Element !== 'undefined') {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!(Element.prototype as any).hasPointerCapture) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (Element.prototype as any).hasPointerCapture = function () {
+        return false
+      }
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!(Element.prototype as any).setPointerCapture) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (Element.prototype as any).setPointerCapture = function () {}
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!(Element.prototype as any).releasePointerCapture) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (Element.prototype as any).releasePointerCapture = function () {}
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!(Element.prototype as any).scrollIntoView) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (Element.prototype as any).scrollIntoView = function () {}
+    }
+  } catch (e) {
+    // Ignore if we can't set these properties
+  }
+}

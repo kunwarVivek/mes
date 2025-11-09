@@ -3,54 +3,55 @@
  *
  * API client for NCR CRUD operations
  */
-import axios from 'axios'
-import type {
-  NCR,
-  CreateNCRDTO,
-  UpdateNCRDTO,
-  NCRListResponse,
-  NCRFilters,
-} from '../types/ncr.types'
+import apiClient from '@/lib/api-client'
+import type { CreateNCRFormData, UpdateNCRStatusFormData, NCR } from '../schemas/ncr.schema'
 
-const API_URL = '/api/v1/ncr'
+export interface NCRListResponse {
+  items: NCR[]
+  total: number
+  page: number
+  page_size: number
+  total_pages: number
+}
+
+export interface NCRListParams {
+  page?: number
+  page_size?: number
+  status?: string
+  work_order_id?: number
+  search?: string
+}
 
 export const ncrService = {
   /**
-   * Get all NCRs with optional filters
+   * List NCRs with optional filters and pagination
    */
-  getAll: async (filters?: NCRFilters): Promise<NCRListResponse> => {
-    const { data } = await axios.get(API_URL, { params: filters })
+  list: async (params?: NCRListParams): Promise<NCRListResponse> => {
+    const { data } = await apiClient.get<NCRListResponse>('/quality/ncrs', { params })
     return data
   },
 
   /**
    * Get NCR by ID
    */
-  getById: async (id: number): Promise<NCR> => {
-    const { data } = await axios.get(`${API_URL}/${id}`)
+  get: async (id: number): Promise<NCR> => {
+    const { data } = await apiClient.get<NCR>(`/quality/ncrs/${id}`)
     return data
   },
 
   /**
    * Create new NCR
    */
-  create: async (ncr: CreateNCRDTO): Promise<NCR> => {
-    const { data } = await axios.post(API_URL, ncr)
+  create: async (ncr: CreateNCRFormData): Promise<NCR> => {
+    const { data } = await apiClient.post<NCR>('/quality/ncrs', ncr)
     return data
   },
 
   /**
-   * Update NCR
+   * Update NCR status (workflow transitions)
    */
-  update: async (id: number, ncr: UpdateNCRDTO): Promise<NCR> => {
-    const { data } = await axios.put(`${API_URL}/${id}`, ncr)
+  updateStatus: async (id: number, statusUpdate: UpdateNCRStatusFormData): Promise<NCR> => {
+    const { data } = await apiClient.patch<NCR>(`/quality/ncrs/${id}/status`, statusUpdate)
     return data
-  },
-
-  /**
-   * Delete NCR
-   */
-  delete: async (id: number): Promise<void> => {
-    await axios.delete(`${API_URL}/${id}`)
   },
 }

@@ -4,18 +4,11 @@
  * TanStack Query hook for fetching NCRs list
  */
 import { useQuery } from '@tanstack/react-query'
-import { ncrService } from '../services/ncr.service'
-import { useAuthStore } from '@/stores/auth.store'
-import type { NCRFilters } from '../types/ncr.types'
+import { ncrService, type NCRListParams } from '../services/ncr.service'
 
-export const NCRS_QUERY_KEY = 'ncrs'
-
-export function useNCRs(filters?: Omit<NCRFilters, 'plant_id'>) {
-  const { currentPlant } = useAuthStore()
-
+export function useNCRs(params?: NCRListParams) {
   return useQuery({
-    queryKey: [NCRS_QUERY_KEY, currentPlant?.id, filters],
-    queryFn: () => ncrService.getAll({ plant_id: currentPlant?.id, ...filters }),
-    enabled: !!currentPlant,
+    queryKey: ['ncrs', params],
+    queryFn: () => ncrService.list(params),
   })
 }

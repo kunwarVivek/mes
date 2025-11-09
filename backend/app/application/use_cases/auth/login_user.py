@@ -36,12 +36,14 @@ class LoginUserUseCase:
         if not user.is_active:
             raise DomainValidationException("User account is inactive")
 
-        # Generate tokens
+        # Generate tokens with tenant context for RLS enforcement
         token_data = {
             "sub": str(user.id),
             "email": user.email.value,
             "username": user.username.value,
-            "is_superuser": user.is_superuser
+            "is_superuser": user.is_superuser,
+            "organization_id": user.organization_id,
+            "plant_id": user.plant_id
         }
 
         access_token = self._jwt_handler.create_access_token(token_data)
@@ -54,7 +56,9 @@ class LoginUserUseCase:
         return Token(
             access_token=access_token,
             refresh_token=refresh_token,
-            expires_at=expires_at
+            expires_at=expires_at,
+            organization_id=user.organization_id,
+            plant_id=user.plant_id
         )
 
     def _verify_password(self, plain_password: str, hashed_password: str) -> bool:

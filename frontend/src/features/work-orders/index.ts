@@ -1,43 +1,30 @@
 /**
- * Work Orders Module Entry Point
+ * Work Orders Feature Module
  *
- * Exports all public APIs for the work-orders feature module
+ * Exports all public APIs for work orders feature
  */
 
-// Types
-export type {
-  WorkOrder,
-  CreateWorkOrderDTO,
-  UpdateWorkOrderDTO,
-  WorkOrderListResponse,
-  WorkOrderFilters,
-  OrderType,
-  OrderStatus,
-  WorkOrderOperation,
-  WorkOrderMaterial,
-} from './types/workOrder.types'
-
-// Schemas
-export {
-  createWorkOrderSchema,
-  updateWorkOrderSchema,
-  orderTypeSchema,
-  orderStatusSchema,
-} from './schemas/workOrder.schema'
-export type {
-  CreateWorkOrderFormData,
-  UpdateWorkOrderFormData,
-} from './schemas/workOrder.schema'
+// Schemas and Types
+export * from './schemas/work-order.schema'
 
 // Services
-export { workOrderService } from './services/workOrder.service'
+export { workOrderService } from './services/work-order.service'
+export type {
+  WorkOrderListResponse,
+  WorkOrderListParams,
+  AddOperationRequest,
+  AddMaterialRequest,
+} from './services/work-order.service'
 
 // Hooks
 export { useWorkOrders, WORK_ORDERS_QUERY_KEY } from './hooks/useWorkOrders'
 export { useWorkOrder } from './hooks/useWorkOrder'
-export { useCreateWorkOrder } from './hooks/useCreateWorkOrder'
-export { useUpdateWorkOrder } from './hooks/useUpdateWorkOrder'
-export { useDeleteWorkOrder } from './hooks/useDeleteWorkOrder'
-export { useReleaseWorkOrder } from './hooks/useReleaseWorkOrder'
-export { useStartWorkOrder } from './hooks/useStartWorkOrder'
-export { useCompleteWorkOrder } from './hooks/useCompleteWorkOrder'
+export { useWorkOrderMutations } from './hooks/useWorkOrderMutations'
+
+// Components
+export { WorkOrderForm } from './components/WorkOrderForm'
+export { WorkOrderTable } from './components/WorkOrderTable'
+
+// Pages
+export { WorkOrderListPage } from './pages/WorkOrderListPage'
+export { WorkOrderFormPage } from './pages/WorkOrderFormPage'

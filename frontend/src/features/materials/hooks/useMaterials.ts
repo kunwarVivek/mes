@@ -4,14 +4,11 @@
  * TanStack Query hook for fetching materials list
  */
 import { useQuery } from '@tanstack/react-query'
-import { materialService } from '../services/material.service'
-import type { MaterialFilters } from '../types/material.types'
+import { materialService, type MaterialListParams } from '../services/material.service'
 
-export const MATERIALS_QUERY_KEY = 'materials'
-
-export function useMaterials(filters?: MaterialFilters) {
+export function useMaterials(params?: MaterialListParams) {
   return useQuery({
-    queryKey: [MATERIALS_QUERY_KEY, filters],
-    queryFn: () => materialService.getAll(filters),
+    queryKey: ['materials', params],
+    queryFn: () => materialService.list(params),
   })
 }

@@ -1,132 +1,132 @@
 /**
  * NCRTable Component
  *
- * Table for displaying NCRs with status/defect badges and actions
+ * Table for displaying NCRs using DataTable organism with StatusBadge and dialog
  */
-import { Button, Badge } from '@/design-system/atoms'
-import type { NCR } from '../types/ncr.types'
+import { useState } from 'react'
+import { DataTable, type Column } from '@/design-system/organisms/DataTable'
+import { StatusBadge } from '@/design-system/molecules/StatusBadge'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { NCRStatusUpdateDialog } from './NCRStatusUpdateDialog'
+import { useNCRs } from '../hooks/useNCRs'
+import type { NCR, NCRStatus } from '../schemas/ncr.schema'
+import type { NCRListParams } from '../services/ncr.service'
 
 export interface NCRTableProps {
-  ncrs: NCR[]
-  isLoading?: boolean
-  onView: (ncr: NCR) => void
-  onDelete: (id: number) => void
+  filters?: NCRListParams
+  onRowClick?: (ncr: NCR) => void
 }
 
-const getStatusBadgeVariant = (
-  status: string
-): 'success' | 'warning' | 'error' | 'info' | 'neutral' => {
-  switch (status) {
-    case 'CLOSED':
-      return 'success'
-    case 'CORRECTIVE_ACTION':
-      return 'info'
-    case 'INVESTIGATING':
-      return 'warning'
-    case 'OPEN':
-    case 'REJECTED':
-      return 'error'
-    default:
-      return 'neutral'
-  }
-}
+export function NCRTable({ filters, onRowClick }: NCRTableProps) {
+  const { data, isLoading } = useNCRs(filters)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [selectedNCR, setSelectedNCR] = useState<NCR | null>(null)
 
-const getDefectTypeBadgeVariant = (
-  defectType: string
-): 'error' | 'warning' | 'info' | 'neutral' => {
-  switch (defectType) {
-    case 'MATERIAL':
-    case 'DESIGN':
-      return 'error'
-    case 'PROCESS':
-    case 'EQUIPMENT':
-      return 'warning'
-    case 'WORKMANSHIP':
-    case 'OTHER':
-      return 'info'
-    default:
-      return 'neutral'
-  }
-}
-
-export function NCRTable({ ncrs, isLoading, onView, onDelete }: NCRTableProps) {
-  if (isLoading) {
-    return <div className="p-4">Loading NCRs...</div>
+  const handleUpdateStatusClick = (ncr: NCR, event: React.MouseEvent) => {
+    event.stopPropagation()
+    setSelectedNCR(ncr)
+    setDialogOpen(true)
   }
 
-  if (ncrs.length === 0) {
-    return null
+  const handleDialogClose = () => {
+    setDialogOpen(false)
+    setSelectedNCR(null)
   }
+
+  const columns: Column<NCR>[] = [
+    {
+      header: 'NCR Number',
+      accessor: 'ncr_number',
+      sortable: true,
+      width: '150px',
+    },
+    {
+      header: 'WO ID',
+      accessor: 'work_order_id',
+      sortable: true,
+      width: '100px',
+    },
+    {
+      header: 'Material ID',
+      accessor: 'material_id',
+      sortable: true,
+      width: '120px',
+    },
+    {
+      header: 'Defect Type',
+      accessor: 'defect_type',
+      width: '150px',
+      render: (value: string) => (
+        <Badge variant="default" className="text-xs">
+          {value}
+        </Badge>
+      ),
+    },
+    {
+      header: 'Description',
+      accessor: 'defect_description',
+      render: (value: string) => {
+        const truncated = value.length > 50 ? `${value.substring(0, 50)}...` : value
+        return <span title={value}>{truncated}</span>
+      },
+    },
+    {
+      header: 'Qty Defective',
+      accessor: 'quantity_defective',
+      width: '130px',
+      render: (value: number) => value.toFixed(2),
+    },
+    {
+      header: 'Status',
+      accessor: 'status',
+      width: '130px',
+      render: (value: string) => <StatusBadge status={value as NCRStatus} />,
+    },
+    {
+      header: 'Created Date',
+      accessor: 'created_at',
+      sortable: true,
+      width: '150px',
+      render: (value: Date) => new Date(value).toLocaleDateString(),
+    },
+    {
+      header: 'Actions',
+      accessor: (row: NCR) => row,
+      width: '150px',
+      render: (_value: NCR, row: NCR) => (
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={row.status === 'CLOSED'}
+          onClick={(e) => handleUpdateStatusClick(row, e)}
+        >
+          Update Status
+        </Button>
+      ),
+    },
+  ]
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full bg-white border border-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-              NCR Number
-            </th>
-            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Status</th>
-            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-              Defect Type
-            </th>
-            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-              Qty Affected
-            </th>
-            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-              Description
-            </th>
-            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Reported</th>
-            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {ncrs.map((ncr) => (
-            <tr key={ncr.id} className="hover:bg-gray-50">
-              <td className="px-4 py-2 text-sm font-medium text-gray-900">
-                {ncr.ncr_number}
-              </td>
-              <td className="px-4 py-2">
-                <Badge
-                  variant={getStatusBadgeVariant(ncr.status)}
-                  size="sm"
-                  className={`badge--${getStatusBadgeVariant(ncr.status)}`}
-                >
-                  {ncr.status.replace('_', ' ')}
-                </Badge>
-              </td>
-              <td className="px-4 py-2">
-                <Badge
-                  variant={getDefectTypeBadgeVariant(ncr.defect_type)}
-                  size="sm"
-                  className={`badge--${getDefectTypeBadgeVariant(ncr.defect_type)}`}
-                >
-                  {ncr.defect_type}
-                </Badge>
-              </td>
-              <td className="px-4 py-2 text-sm text-gray-700">{ncr.quantity_affected}</td>
-              <td className="px-4 py-2">
-                <div className="max-w-md truncate text-sm text-gray-700" title={ncr.description}>
-                  {ncr.description}
-                </div>
-              </td>
-              <td className="px-4 py-2 text-sm text-gray-700">
-                {new Date(ncr.reported_at).toLocaleDateString()}
-              </td>
-              <td className="px-4 py-2">
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={() => onView(ncr)}>
-                    View
-                  </Button>
-                  <Button size="sm" variant="danger" onClick={() => onDelete(ncr.id)}>
-                    Delete
-                  </Button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <>
+      <DataTable
+        data={data?.items || []}
+        columns={columns}
+        loading={isLoading}
+        onRowClick={onRowClick}
+        pagination
+        pageSize={25}
+        stickyHeader
+        rowKey="id"
+      />
+
+      {selectedNCR && (
+        <NCRStatusUpdateDialog
+          ncr={selectedNCR}
+          open={dialogOpen}
+          onOpenChange={handleDialogClose}
+        />
+      )}
+    </>
   )
 }
