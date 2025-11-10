@@ -8,6 +8,7 @@ import { createMachineSchema, updateMachineSchema } from '../schemas/machine.sch
 import type { CreateMachineDTO, UpdateMachineDTO, Machine } from '../types/machine.types'
 import { ZodError } from 'zod'
 import './MachineForm.css'
+import { useAuthStore } from '@/stores/auth.store'
 
 export interface MachineFormProps {
   initialData?: Machine
@@ -24,9 +25,11 @@ export function MachineForm({
   isSubmitting = false,
   error,
 }: MachineFormProps) {
+  const { currentOrg, currentPlant } = useAuthStore()
+
   const [formData, setFormData] = useState<Partial<CreateMachineDTO>>({
-    organization_id: initialData?.organization_id ?? 1,
-    plant_id: initialData?.plant_id ?? 1,
+    organization_id: initialData?.organization_id ?? currentOrg?.id,
+    plant_id: initialData?.plant_id ?? currentPlant?.id,
     machine_code: initialData?.machine_code ?? '',
     machine_name: initialData?.machine_name ?? '',
     description: initialData?.description ?? '',

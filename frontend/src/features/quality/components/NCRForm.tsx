@@ -24,6 +24,7 @@ import {
 } from '../schemas/ncr.schema'
 import { useNCRMutations } from '../hooks/useNCRMutations'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth.store'
 
 export interface NCRFormProps {
   onSuccess?: () => void
@@ -39,6 +40,7 @@ const defectTypeOptions: { value: DefectType; label: string }[] = [
 
 export function NCRForm({ onSuccess }: NCRFormProps) {
   const { createNCR } = useNCRMutations()
+  const { user } = useAuthStore()
 
   const form = useForm<CreateNCRFormData>({
     resolver: zodResolver(createNCRSchema),
@@ -49,7 +51,7 @@ export function NCRForm({ onSuccess }: NCRFormProps) {
       defect_type: 'DIMENSIONAL',
       defect_description: '',
       quantity_defective: undefined,
-      reported_by_user_id: 1, // Default value
+      reported_by_user_id: user?.id,
       attachment_urls: [],
     },
   })

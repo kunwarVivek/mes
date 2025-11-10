@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { NCRStatusUpdateDialog } from './NCRStatusUpdateDialog'
 import { useNCRs } from '../hooks/useNCRs'
+import { sanitizeHtml } from '@/utils/sanitize'
 import type { NCR, NCRStatus } from '../schemas/ncr.schema'
 import type { NCRListParams } from '../services/ncr.service'
 
@@ -67,8 +68,14 @@ export function NCRTable({ filters, onRowClick }: NCRTableProps) {
       header: 'Description',
       accessor: 'defect_description',
       render: (value: string) => {
-        const truncated = value.length > 50 ? `${value.substring(0, 50)}...` : value
-        return <span title={value}>{truncated}</span>
+        const sanitized = sanitizeHtml(value)
+        const truncated = sanitized.length > 50 ? `${sanitized.substring(0, 50)}...` : sanitized
+        return (
+          <span
+            title={sanitized}
+            dangerouslySetInnerHTML={{ __html: truncated }}
+          />
+        )
       },
     },
     {

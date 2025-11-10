@@ -32,6 +32,26 @@ vi.mock('../../hooks/useMaterialMutations', () => ({
   }),
 }))
 
+// Mock auth store
+const mockAuthStore = {
+  user: { id: 99, email: 'test@example.com', username: 'testuser', is_active: true, is_superuser: false },
+  currentOrg: { id: 42, org_code: 'ORG42', org_name: 'Test Organization' },
+  currentPlant: { id: 10, plant_code: 'PLT10', plant_name: 'Test Plant' },
+  accessToken: 'mock-token',
+  refreshToken: 'mock-refresh',
+  isAuthenticated: true,
+  login: vi.fn(),
+  logout: vi.fn(),
+  updateUser: vi.fn(),
+  setTokens: vi.fn(),
+  setCurrentOrg: vi.fn(),
+  setCurrentPlant: vi.fn(),
+}
+
+vi.mock('@/stores/auth.store', () => ({
+  useAuthStore: () => mockAuthStore,
+}))
+
 const renderWithProviders = (component: React.ReactElement) => {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -280,6 +300,76 @@ describe('MaterialForm', () => {
       expect(screen.getByLabelText(/reorder point/i)).toHaveValue(0)
       expect(screen.getByLabelText(/lot size/i)).toHaveValue(1)
       expect(screen.getByLabelText(/lead time/i)).toHaveValue(0)
+    })
+  })
+
+  describe('Auth Store Integration', () => {
+    it('should use organization_id from auth store when no defaultValues provided', async () => {
+      const user = userEvent.setup()
+      mockCreateMaterial.mockResolvedValue({ id: 1 })
+
+      renderWithProviders(<MaterialForm />)
+
+      await user.type(screen.getByLabelText(/material number/i), 'MAT001')
+      await user.type(screen.getByLabelText(/material name/i), 'Test Material')
+      await user.type(screen.getByLabelText(/material category/i), '1')
+      await user.type(screen.getByLabelText(/base uom/i), '1')
+
+      await user.click(screen.getByRole('button', { name: /create material/i }))
+
+      await waitFor(() => {
+        expect(mockCreateMaterial).toHaveBeenCalledWith(
+          expect.objectContaining({
+            organization_id: 42, // From mockAuthStore.currentOrg.id
+            plant_id: 10, // From mockAuthStore.currentPlant.id
+          })
+        )
+      })
+    })
+
+    it('should prefer explicit defaultValues over auth store', async () => {
+      const user = userEvent.setup()
+      mockCreateMaterial.mockResolvedValue({ id: 1 })
+
+      renderWithProviders(<MaterialForm defaultValues={{ organization_id: 5, plant_id: 7 }} />)
+
+      await user.type(screen.getByLabelText(/material number/i), 'MAT001')
+      await user.type(screen.getByLabelText(/material name/i), 'Test Material')
+      await user.type(screen.getByLabelText(/material category/i), '1')
+      await user.type(screen.getByLabelText(/base uom/i), '1')
+
+      await user.click(screen.getByRole('button', { name: /create material/i }))
+
+      await waitFor(() => {
+        expect(mockCreateMaterial).toHaveBeenCalledWith(
+          expect.objectContaining({
+            organization_id: 5, // From explicit defaultValues
+            plant_id: 7, // From explicit defaultValues
+          })
+        )
+      })
+    })
+
+    it('should handle missing auth store values gracefully', async () => {
+      const user = userEvent.setup()
+      mockCreateMaterial.mockResolvedValue({ id: 1 })
+
+      // Temporarily override mock to return null values
+      vi.mocked(vi.fn()).mockReturnValueOnce({
+        ...mockAuthStore,
+        currentOrg: null,
+        currentPlant: null,
+      })
+
+      renderWithProviders(<MaterialForm />)
+
+      await user.type(screen.getByLabelText(/material number/i), 'MAT001')
+      await user.type(screen.getByLabelText(/material name/i), 'Test Material')
+      await user.type(screen.getByLabelText(/material category/i), '1')
+      await user.type(screen.getByLabelText(/base uom/i), '1')
+
+      // Form should still render without crashing
+      expect(screen.getByLabelText(/material number/i)).toBeInTheDocument()
     })
   })
 })

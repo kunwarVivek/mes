@@ -25,5 +25,6 @@ api_router.include_router(maintenance.router, tags=["maintenance"])
 api_router.include_router(production_logs.router, prefix="/production-logs", tags=["production-logs"])
 api_router.include_router(lanes.router, tags=["lanes"])
 api_router.include_router(bom.router, prefix="/bom", tags=["bom"])
+api_router.include_router(metrics.router, prefix="/metrics", tags=["metrics"])
 
 __all__ = ["api_router"]

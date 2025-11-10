@@ -21,10 +21,10 @@ export function useNCRMutations() {
         description: 'NCR created successfully',
       })
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: 'Error',
-        description: 'Failed to create NCR',
+        description: error.response?.data?.detail || 'Failed to create NCR',
         variant: 'destructive',
       })
     },
@@ -40,10 +40,10 @@ export function useNCRMutations() {
         description: 'NCR status updated successfully',
       })
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: 'Error',
-        description: 'Failed to update NCR status',
+        description: error.response?.data?.detail || 'Failed to update NCR status',
         variant: 'destructive',
       })
     },

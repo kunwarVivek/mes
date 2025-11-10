@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { Button } from '@/design-system/atoms/Button'
 import { Textarea } from '@/design-system/atoms/Textarea'
 import { Badge } from '@/design-system/atoms/Badge'
+import { sanitizeHtml } from '@/utils/sanitize'
 import type { NCR, UpdateNCRDTO } from '../types/ncr.types'
 
 export interface NCRDetailModalProps {
@@ -83,7 +84,10 @@ export function NCRDetailModal({ ncr, onUpdate, onClose }: NCRDetailModalProps) 
           {/* Description */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-            <div className="p-3 bg-gray-50 rounded border">{ncr.description}</div>
+            <div
+              className="p-3 bg-gray-50 rounded border"
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(ncr.description) }}
+            />
           </div>
 
           {/* Edit Form or Read-only */}
@@ -94,7 +98,10 @@ export function NCRDetailModal({ ncr, onUpdate, onClose }: NCRDetailModalProps) 
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Root Cause
                   </label>
-                  <div className="p-3 bg-gray-50 rounded border">{ncr.root_cause}</div>
+                  <div
+                    className="p-3 bg-gray-50 rounded border"
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(ncr.root_cause) }}
+                  />
                 </div>
               )}
 
@@ -103,7 +110,10 @@ export function NCRDetailModal({ ncr, onUpdate, onClose }: NCRDetailModalProps) 
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Corrective Action
                   </label>
-                  <div className="p-3 bg-gray-50 rounded border">{ncr.corrective_action}</div>
+                  <div
+                    className="p-3 bg-gray-50 rounded border"
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(ncr.corrective_action) }}
+                  />
                 </div>
               )}
 
@@ -112,7 +122,10 @@ export function NCRDetailModal({ ncr, onUpdate, onClose }: NCRDetailModalProps) 
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Preventive Action
                   </label>
-                  <div className="p-3 bg-gray-50 rounded border">{ncr.preventive_action}</div>
+                  <div
+                    className="p-3 bg-gray-50 rounded border"
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(ncr.preventive_action) }}
+                  />
                 </div>
               )}
 

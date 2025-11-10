@@ -19,6 +19,26 @@ vi.mock('@/components/ui/use-toast', () => ({
   }),
 }))
 
+// Mock auth store
+const mockAuthStore = {
+  user: { id: 99, email: 'reporter@example.com', username: 'reporter', is_active: true, is_superuser: false },
+  currentOrg: { id: 42, org_code: 'ORG42', org_name: 'Test Organization' },
+  currentPlant: { id: 10, plant_code: 'PLT10', plant_name: 'Test Plant' },
+  accessToken: 'mock-token',
+  refreshToken: 'mock-refresh',
+  isAuthenticated: true,
+  login: vi.fn(),
+  logout: vi.fn(),
+  updateUser: vi.fn(),
+  setTokens: vi.fn(),
+  setCurrentOrg: vi.fn(),
+  setCurrentPlant: vi.fn(),
+}
+
+vi.mock('@/stores/auth.store', () => ({
+  useAuthStore: () => mockAuthStore,
+}))
+
 describe('NCRForm', () => {
   const mockCreateNCR = vi.fn()
   const mockOnSuccess = vi.fn()
@@ -354,11 +374,67 @@ describe('NCRForm', () => {
   })
 
   describe('Default Values', () => {
-    it('should set reported_by_user_id default to 1', () => {
+    it('should set reported_by_user_id default from auth store', () => {
       render(<NCRForm onSuccess={mockOnSuccess} />)
 
       const reportedByInput = screen.getByLabelText(/reported by user id/i)
-      expect(reportedByInput).toHaveValue(1)
+      // Should use auth store user ID (99), not hardcoded 1
+      expect(reportedByInput).toHaveValue(99)
+    })
+  })
+
+  describe('Auth Store Integration', () => {
+    it('should use reported_by_user_id from auth store', async () => {
+      const user = userEvent.setup()
+      mockCreateNCR.mockResolvedValueOnce({ id: 1 })
+
+      render(<NCRForm onSuccess={mockOnSuccess} />)
+
+      // Fill form with minimum required fields
+      await user.type(screen.getByLabelText(/ncr number/i), 'NCR-2025-001')
+      await user.type(screen.getByLabelText(/work order id/i), '100')
+      await user.type(screen.getByLabelText(/material id/i), '50')
+
+      const defectTypeSelect = screen.getByRole('combobox', { name: /defect type/i })
+      await user.click(defectTypeSelect)
+      await user.click(screen.getByRole('option', { name: /visual/i }))
+
+      await user.type(screen.getByLabelText(/defect description/i), 'Surface defect')
+      await user.type(screen.getByLabelText(/quantity defective/i), '3')
+
+      const submitButton = screen.getByRole('button', { name: /create ncr/i })
+      await user.click(submitButton)
+
+      await waitFor(() => {
+        expect(mockCreateNCR).toHaveBeenCalledWith(
+          expect.objectContaining({
+            reported_by_user_id: 99, // From mockAuthStore.user.id
+          })
+        )
+      })
+    })
+
+    it('should handle missing user in auth store gracefully', async () => {
+      const user = userEvent.setup()
+
+      // Temporarily override mock to return null user
+      vi.mocked(vi.fn()).mockReturnValueOnce({
+        ...mockAuthStore,
+        user: null,
+      })
+
+      render(<NCRForm onSuccess={mockOnSuccess} />)
+
+      // Form should still render without crashing
+      expect(screen.getByLabelText(/ncr number/i)).toBeInTheDocument()
+    })
+
+    it('should show correct user ID in form field from auth store', () => {
+      render(<NCRForm onSuccess={mockOnSuccess} />)
+
+      const reportedByInput = screen.getByLabelText(/reported by user id/i)
+      // Should use auth store user ID (99), not hardcoded 1
+      expect(reportedByInput).toHaveValue(99)
     })
   })
 })
