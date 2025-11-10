@@ -13,26 +13,8 @@ from app.core.database import Base
 from app.core.config import settings
 
 # Import all models to ensure they're registered with Base.metadata
-from app.models import (
-    organization,
-    plant,
-    department,
-    material,
-    inventory,
-    costing,
-    work_order,
-    operation_config,
-    work_center_shift,
-    bom,
-    machine,
-    shift,
-    ncr,
-    inspection,
-    maintenance,
-    currency,
-    project,
-)
-from app.infrastructure.persistence import models as user_models
+# This imports ALL models via the models/__init__.py which consolidates everything
+import app.models  # Imports all models through __init__.py
 
 # Alembic Config object
 config = context.config
