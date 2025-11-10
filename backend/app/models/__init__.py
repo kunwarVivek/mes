@@ -43,6 +43,94 @@ from app.models.inspection import (
 from app.models.project import Project
 from app.models.production_log import ProductionLog
 from app.models.lane import Lane, LaneAssignment
+from app.models.role import Role, UserRole, UserPlantAccess
+from app.models.custom_field import CustomField, FieldValue, TypeList, TypeListValue
+from app.models.workflow import (
+    Workflow,
+    WorkflowState,
+    WorkflowTransition,
+    Approval,
+    WorkflowHistory,
+    StateType,
+    ApprovalStatus,
+    ApprovalPriority
+)
+from app.models.logistics import (
+    Shipment,
+    ShipmentItem,
+    BarcodeLabel,
+    QRCodeScan,
+    ShipmentType,
+    ShipmentStatus,
+    BarcodeType,
+    ScanResolution
+)
+from app.models.reporting import (
+    Report,
+    ReportExecution,
+    Dashboard,
+    ReportType,
+    ReportCategory,
+    ExecutionStatus,
+    TriggerType,
+    DashboardType
+)
+from app.models.project_management import (
+    ProjectDocument,
+    ProjectMilestone,
+    RDADrawing,
+    ProjectBOM,
+    DocumentType,
+    MilestoneStatus,
+    RDAApprovalStatus,
+    RDAPriority,
+    BOMType as ProjectBOMType
+)
+from app.models.quality_enhancement import (
+    InspectionPlan as QualityInspectionPlan,
+    InspectionPoint,
+    InspectionCharacteristic,
+    InspectionMeasurement,
+    PlanType,
+    AppliesTo,
+    FrequencyType,
+    CharacteristicType,
+    DataType,
+    ControlChartType
+)
+from app.models.traceability import (
+    LotBatch,
+    SerialNumber,
+    TraceabilityLink,
+    GenealogyRecord,
+    SourceType,
+    QualityStatusType,
+    SerialStatus,
+    EntityType,
+    RelationshipType,
+    OperationType
+)
+from app.models.branding import (
+    OrganizationBranding,
+    EmailTemplate,
+    TemplateType
+)
+from app.models.infrastructure import (
+    AuditLog,
+    Notification,
+    SystemSetting,
+    FileUpload,
+    SAPSyncLog,
+    SAPMapping,
+    AuditAction,
+    Severity,
+    NotificationPriority,
+    DeliveryChannel,
+    SettingType,
+    StorageProvider,
+    SyncDirection,
+    SyncStatus
+)
 
 __all__ = [
     "User",
@@ -80,5 +168,82 @@ __all__ = [
     "Project",
     "ProductionLog",
     "Lane",
-    "LaneAssignment"
+    "LaneAssignment",
+    "Role",
+    "UserRole",
+    "UserPlantAccess",
+    "CustomField",
+    "FieldValue",
+    "TypeList",
+    "TypeListValue",
+    "Workflow",
+    "WorkflowState",
+    "WorkflowTransition",
+    "Approval",
+    "WorkflowHistory",
+    "StateType",
+    "ApprovalStatus",
+    "ApprovalPriority",
+    "Shipment",
+    "ShipmentItem",
+    "BarcodeLabel",
+    "QRCodeScan",
+    "ShipmentType",
+    "ShipmentStatus",
+    "BarcodeType",
+    "ScanResolution",
+    "Report",
+    "ReportExecution",
+    "Dashboard",
+    "ReportType",
+    "ReportCategory",
+    "ExecutionStatus",
+    "TriggerType",
+    "DashboardType",
+    "ProjectDocument",
+    "ProjectMilestone",
+    "RDADrawing",
+    "ProjectBOM",
+    "DocumentType",
+    "MilestoneStatus",
+    "RDAApprovalStatus",
+    "RDAPriority",
+    "ProjectBOMType",
+    "QualityInspectionPlan",
+    "InspectionPoint",
+    "InspectionCharacteristic",
+    "InspectionMeasurement",
+    "PlanType",
+    "AppliesTo",
+    "FrequencyType",
+    "CharacteristicType",
+    "DataType",
+    "ControlChartType",
+    "LotBatch",
+    "SerialNumber",
+    "TraceabilityLink",
+    "GenealogyRecord",
+    "SourceType",
+    "QualityStatusType",
+    "SerialStatus",
+    "EntityType",
+    "RelationshipType",
+    "OperationType",
+    "OrganizationBranding",
+    "EmailTemplate",
+    "TemplateType",
+    "AuditLog",
+    "Notification",
+    "SystemSetting",
+    "FileUpload",
+    "SAPSyncLog",
+    "SAPMapping",
+    "AuditAction",
+    "Severity",
+    "NotificationPriority",
+    "DeliveryChannel",
+    "SettingType",
+    "StorageProvider",
+    "SyncDirection",
+    "SyncStatus"
 ]
