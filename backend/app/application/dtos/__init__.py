@@ -121,6 +121,26 @@ from app.application.dtos.quality_enhancement_dto import (
     FPYCalculationRequest,
     FPYResponse
 )
+from app.application.dtos.traceability_dto import (
+    LotBatchCreateDTO,
+    LotBatchUpdateDTO,
+    LotBatchReserveDTO,
+    LotBatchConsumeDTO,
+    LotBatchResponse,
+    SerialNumberCreateDTO,
+    SerialNumberUpdateDTO,
+    SerialNumberShipDTO,
+    SerialNumberResponse,
+    TraceabilityLinkCreateDTO,
+    TraceabilityLinkResponse,
+    GenealogyRecordCreateDTO,
+    GenealogyRecordResponse,
+    GenealogyQueryRequest,
+    WhereUsedRequest,
+    WhereFromRequest,
+    GenealogyTreeNode,
+    GenealogyTreeResponse
+)
 
 __all__ = [
     "CreateUserDTO",
@@ -239,5 +259,24 @@ __all__ = [
     "ControlChartDataPoint",
     "ControlChartDataResponse",
     "FPYCalculationRequest",
-    "FPYResponse"
+    "FPYResponse",
+    # Traceability DTOs
+    "LotBatchCreateDTO",
+    "LotBatchUpdateDTO",
+    "LotBatchReserveDTO",
+    "LotBatchConsumeDTO",
+    "LotBatchResponse",
+    "SerialNumberCreateDTO",
+    "SerialNumberUpdateDTO",
+    "SerialNumberShipDTO",
+    "SerialNumberResponse",
+    "TraceabilityLinkCreateDTO",
+    "TraceabilityLinkResponse",
+    "GenealogyRecordCreateDTO",
+    "GenealogyRecordResponse",
+    "GenealogyQueryRequest",
+    "WhereUsedRequest",
+    "WhereFromRequest",
+    "GenealogyTreeNode",
+    "GenealogyTreeResponse"
 ]

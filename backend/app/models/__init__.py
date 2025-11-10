@@ -98,6 +98,18 @@ from app.models.quality_enhancement import (
     DataType,
     ControlChartType
 )
+from app.models.traceability import (
+    LotBatch,
+    SerialNumber,
+    TraceabilityLink,
+    GenealogyRecord,
+    SourceType,
+    QualityStatusType,
+    SerialStatus,
+    EntityType,
+    RelationshipType,
+    OperationType
+)
 
 __all__ = [
     "User",
@@ -185,5 +197,15 @@ __all__ = [
     "FrequencyType",
     "CharacteristicType",
     "DataType",
-    "ControlChartType"
+    "ControlChartType",
+    "LotBatch",
+    "SerialNumber",
+    "TraceabilityLink",
+    "GenealogyRecord",
+    "SourceType",
+    "QualityStatusType",
+    "SerialStatus",
+    "EntityType",
+    "RelationshipType",
+    "OperationType"
 ]
