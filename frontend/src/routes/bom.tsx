@@ -1,6 +1,6 @@
 import { createRoute } from '@tanstack/react-router'
 import { authenticatedRoute } from './_authenticated'
-import { BOMPage } from '../features/bom/pages/BOMPage'
+import { BOMTreePage } from '../features/bom/pages/BOMTreePage'
 
 /**
  * BOM Route (/bom)
@@ -8,11 +8,11 @@ import { BOMPage } from '../features/bom/pages/BOMPage'
  * Bill of Materials route:
  * - Single Responsibility: BOM route config
  * - Protected: Requires authentication
- * - Component: BOMPage
+ * - Component: BOMTreePage (hierarchical tree view with multi-level BOM management)
  */
 
 export const bomRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/bom',
-  component: BOMPage,
+  component: BOMTreePage,
 })

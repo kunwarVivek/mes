@@ -11,9 +11,13 @@
 import { useState } from 'react'
 import { useMachines } from '../hooks/useMachines'
 import { useCreateMachine, useUpdateMachine, useDeleteMachine, useUpdateMachineStatus } from '../hooks/useMachineMutations'
+import { useMachineOEE } from '../hooks/useMachineOEE'
+import { useMachineStatusHistory } from '../hooks/useMachineStatusHistory'
 import { MachinesTable } from '../components/MachinesTable'
 import { MachineStatusCard } from '../components/MachineStatusCard'
 import { MachineForm } from '../components/MachineForm'
+import { CircularOEEGauge } from '../components/CircularOEEGauge'
+import { MachineStatusTimeline } from '../components/MachineStatusTimeline'
 import type { Machine, CreateMachineDTO, UpdateMachineDTO, MachineStatusUpdateDTO } from '../types/machine.types'
 
 type TabView = 'list' | 'dashboard'
@@ -28,6 +32,14 @@ export const EquipmentPage = () => {
   const [selectedMachine, setSelectedMachine] = useState<Machine | null>(null)
   const [showStatusDialog, setShowStatusDialog] = useState(false)
   const [statusFormData, setStatusFormData] = useState({ status: '', notes: '' })
+  const [showOEESection, setShowOEESection] = useState(false)
+  const [oeeParams, setOEEParams] = useState({
+    startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days ago
+    endDate: new Date().toISOString().split('T')[0], // today
+    idealCycleTime: 1.5,
+    totalPieces: 1000,
+    defectPieces: 20,
+  })
 
   // API hooks
   const { data: machinesData, isLoading, error } = useMachines(
@@ -57,6 +69,22 @@ export const EquipmentPage = () => {
       setStatusFormData({ status: '', notes: '' })
       // TODO: Add toast notification
     },
+  })
+
+  // OEE metrics hook (only fetch when machine is selected and OEE section is shown)
+  const { data: oeeMetrics, isLoading: isLoadingOEE, error: oeeError } = useMachineOEE({
+    machineId: selectedMachine?.id || 0,
+    startDate: oeeParams.startDate,
+    endDate: oeeParams.endDate,
+    idealCycleTime: oeeParams.idealCycleTime,
+    totalPieces: oeeParams.totalPieces,
+    defectPieces: oeeParams.defectPieces,
+  })
+
+  // Status history hook (fetch last 20 records for selected machine)
+  const { data: statusHistory, isLoading: isLoadingHistory } = useMachineStatusHistory({
+    machineId: selectedMachine?.id || 0,
+    limit: 20,
   })
 
   // Filter machines by search query
@@ -309,8 +337,146 @@ export const EquipmentPage = () => {
               </div>
             </div>
 
+            {/* OEE Metrics Section */}
+            <div className="mt-6 border-t pt-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">OEE Metrics</h3>
+                <button
+                  onClick={() => setShowOEESection(!showOEESection)}
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                >
+                  {showOEESection ? 'Hide' : 'Show'} OEE Calculator
+                </button>
+              </div>
+
+              {showOEESection && (
+                <>
+                  {/* OEE Parameters Form */}
+                  <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                    <p className="text-sm text-gray-600 mb-3">
+                      Enter production parameters to calculate OEE metrics for this machine
+                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Start Date
+                        </label>
+                        <input
+                          type="date"
+                          value={oeeParams.startDate}
+                          onChange={(e) => setOEEParams({ ...oeeParams, startDate: e.target.value })}
+                          className="w-full px-3 py-2 border rounded-lg text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          End Date
+                        </label>
+                        <input
+                          type="date"
+                          value={oeeParams.endDate}
+                          onChange={(e) => setOEEParams({ ...oeeParams, endDate: e.target.value })}
+                          className="w-full px-3 py-2 border rounded-lg text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Ideal Cycle Time (min/piece)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={oeeParams.idealCycleTime}
+                          onChange={(e) => setOEEParams({ ...oeeParams, idealCycleTime: parseFloat(e.target.value) || 0 })}
+                          className="w-full px-3 py-2 border rounded-lg text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Total Pieces Produced
+                        </label>
+                        <input
+                          type="number"
+                          value={oeeParams.totalPieces}
+                          onChange={(e) => setOEEParams({ ...oeeParams, totalPieces: parseInt(e.target.value) || 0 })}
+                          className="w-full px-3 py-2 border rounded-lg text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Defective Pieces
+                        </label>
+                        <input
+                          type="number"
+                          value={oeeParams.defectPieces}
+                          onChange={(e) => setOEEParams({ ...oeeParams, defectPieces: parseInt(e.target.value) || 0 })}
+                          className="w-full px-3 py-2 border rounded-lg text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* OEE Results */}
+                  {isLoadingOEE && (
+                    <div className="text-center py-4">
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      <p className="mt-2 text-sm text-gray-600">Calculating OEE...</p>
+                    </div>
+                  )}
+
+                  {oeeError && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                      Error calculating OEE: {oeeError.message}
+                    </div>
+                  )}
+
+                  {oeeMetrics && !isLoadingOEE && (
+                    <div className="bg-white border rounded-lg p-6">
+                      <h4 className="text-md font-semibold mb-4 text-center">
+                        Overall Equipment Effectiveness
+                      </h4>
+                      <div className="grid grid-cols-4 gap-6">
+                        <CircularOEEGauge
+                          value={oeeMetrics.oee_score * 100}
+                          label="OEE Score"
+                          size="medium"
+                        />
+                        <CircularOEEGauge
+                          value={oeeMetrics.availability * 100}
+                          label="Availability"
+                          size="medium"
+                        />
+                        <CircularOEEGauge
+                          value={oeeMetrics.performance * 100}
+                          label="Performance"
+                          size="medium"
+                        />
+                        <CircularOEEGauge
+                          value={oeeMetrics.quality * 100}
+                          label="Quality"
+                          size="medium"
+                        />
+                      </div>
+                      <div className="mt-4 text-center text-sm text-gray-600">
+                        <p>
+                          Period: {oeeParams.startDate} to {oeeParams.endDate}
+                        </p>
+                        <p className="mt-1">
+                          {oeeMetrics.oee_score >= 0.85
+                            ? 'Excellent performance (≥85%)'
+                            : oeeMetrics.oee_score >= 0.60
+                            ? 'Acceptable performance (60-85%)'
+                            : 'Needs improvement (<60%)'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
             {/* Actions */}
-            <div className="flex gap-3">
+            <div className="flex gap-3 mt-6">
               <button
                 onClick={() => {
                   setEditingMachine(selectedMachine)
@@ -336,8 +502,16 @@ export const EquipmentPage = () => {
               </button>
             </div>
 
-            {/* TODO: Add OEE metrics section */}
-            {/* TODO: Add status history timeline */}
+            {/* Status History Timeline */}
+            <div className="mt-6 border-t pt-6">
+              <h3 className="text-lg font-semibold mb-4">Status History</h3>
+              <div className="max-h-96 overflow-y-auto">
+                <MachineStatusTimeline
+                  history={statusHistory || []}
+                  isLoading={isLoadingHistory}
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}
