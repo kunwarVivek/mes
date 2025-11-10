@@ -56,15 +56,30 @@ export const useAuthStore = create<AuthState>()(
       currentOrg: null,
       currentPlant: null,
 
-      login: (user, accessToken, refreshToken) =>
+      login: (user, accessToken, refreshToken) => {
+        // Sync tokens to localStorage for API client
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('access_token', accessToken)
+          localStorage.setItem('refresh_token', refreshToken)
+        }
+
         set({
           user,
           accessToken,
           refreshToken,
           isAuthenticated: true,
-        }),
+        })
+      },
 
-      logout: () =>
+      logout: () => {
+        // Clear tokens from localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('refresh_token')
+          localStorage.removeItem('current_organization_id')
+          localStorage.removeItem('current_plant_id')
+        }
+
         set({
           user: null,
           accessToken: null,
@@ -72,25 +87,51 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
           currentOrg: null,
           currentPlant: null,
-        }),
+        })
+      },
 
       updateUser: (updatedUser) =>
         set((state) => ({
           user: state.user ? { ...state.user, ...updatedUser } : null,
         })),
 
-      setTokens: (accessToken, refreshToken) =>
+      setTokens: (accessToken, refreshToken) => {
+        // Sync tokens to localStorage for API client
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('access_token', accessToken)
+          if (refreshToken) {
+            localStorage.setItem('refresh_token', refreshToken)
+          }
+        }
+
         set((state) => ({
           accessToken,
           refreshToken: refreshToken ?? state.refreshToken,
           isAuthenticated: !!accessToken,
-        })),
+        }))
+      },
 
-      setCurrentOrg: (org) =>
-        set({ currentOrg: org }),
+      setCurrentOrg: (org) => {
+        // Sync org ID to localStorage for API client RLS context
+        if (typeof window !== 'undefined' && org) {
+          localStorage.setItem('current_organization_id', org.id.toString())
+        } else if (typeof window !== 'undefined') {
+          localStorage.removeItem('current_organization_id')
+        }
 
-      setCurrentPlant: (plant) =>
-        set({ currentPlant: plant }),
+        set({ currentOrg: org })
+      },
+
+      setCurrentPlant: (plant) => {
+        // Sync plant ID to localStorage for API client RLS context
+        if (typeof window !== 'undefined' && plant) {
+          localStorage.setItem('current_plant_id', plant.id.toString())
+        } else if (typeof window !== 'undefined') {
+          localStorage.removeItem('current_plant_id')
+        }
+
+        set({ currentPlant: plant })
+      },
     }),
     {
       name: 'auth-storage', // localStorage key
