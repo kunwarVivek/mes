@@ -65,6 +65,37 @@ def upgrade() -> None:
     op.execute('CREATE EXTENSION IF NOT EXISTS pgcrypto')
     op.execute('CREATE EXTENSION IF NOT EXISTS pg_trgm')
 
+    # Additional extensions for PostgreSQL-native architecture
+    # Note: pgmq and pg_cron are optional extensions that may not be available in all environments
+    # If they fail, the migration will continue but background jobs/queue features will be limited
+    try:
+        op.execute('CREATE EXTENSION IF NOT EXISTS pgmq')  # Message queue (30K msgs/sec)
+        print("✓ PGMQ extension installed successfully")
+    except Exception as e:
+        print(f"⚠ PGMQ extension not available (optional): {e}")
+
+    try:
+        op.execute('CREATE EXTENSION IF NOT EXISTS pg_cron')  # Scheduled tasks (PM generation, KPIs)
+        print("✓ pg_cron extension installed successfully")
+    except Exception as e:
+        print(f"⚠ pg_cron extension not available (optional): {e}")
+
+    # Note: pg_search (ParadeDB) and pg_duckdb require separate installation
+    # These extensions provide advanced full-text search (BM25) and OLAP analytics
+    # For now, we'll use standard PostgreSQL features (pg_trgm for search)
+    # Uncomment when ParadeDB is available:
+    # try:
+    #     op.execute('CREATE EXTENSION IF NOT EXISTS pg_search')  # BM25 full-text search
+    #     print("✓ pg_search extension installed successfully")
+    # except Exception as e:
+    #     print(f"⚠ pg_search extension not available (optional): {e}")
+    #
+    # try:
+    #     op.execute('CREATE EXTENSION IF NOT EXISTS pg_duckdb')  # Analytics engine
+    #     print("✓ pg_duckdb extension installed successfully")
+    # except Exception as e:
+    #     print(f"⚠ pg_duckdb extension not available (optional): {e}")
+
     # ========================================================================
     # TimescaleDB Hypertables
     # Convert time-series tables to hypertables
@@ -116,6 +147,156 @@ def upgrade() -> None:
             chunk_time_interval => INTERVAL '1 month',
             if_not_exists => TRUE
         );
+    """)
+
+    # Machine Status History - 1 week chunks
+    op.execute("""
+        SELECT create_hypertable('machine_status_history', 'start_timestamp',
+            chunk_time_interval => INTERVAL '1 week',
+            if_not_exists => TRUE
+        );
+    """)
+
+    # ========================================================================
+    # TimescaleDB Compression Policies
+    # Enable compression for time-series data (75% space savings)
+    # ========================================================================
+
+    # Compress production logs after 7 days
+    op.execute("""
+        ALTER TABLE production_logs SET (
+            timescaledb.compress,
+            timescaledb.compress_segmentby = 'organization_id, work_order_id'
+        );
+        SELECT add_compression_policy('production_logs', INTERVAL '7 days');
+    """)
+
+    # Compress inspection measurements after 7 days
+    op.execute("""
+        ALTER TABLE inspection_measurements SET (
+            timescaledb.compress,
+            timescaledb.compress_segmentby = 'organization_id, inspection_point_id'
+        );
+        SELECT add_compression_policy('inspection_measurements', INTERVAL '7 days');
+    """)
+
+    # ========================================================================
+    # UNLOGGED Cache Table (PostgreSQL-Native Caching)
+    # Replaces Redis with PostgreSQL UNLOGGED table (2x faster writes, 1-2ms latency)
+    # ========================================================================
+    op.execute("""
+        CREATE UNLOGGED TABLE IF NOT EXISTS cache (
+            cache_key VARCHAR(255) PRIMARY KEY,
+            cache_value JSONB NOT NULL,
+            expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+
+        -- Index for expiration cleanup
+        CREATE INDEX IF NOT EXISTS idx_cache_expires_at ON cache(expires_at);
+
+        -- Function to cleanup expired cache entries
+        CREATE OR REPLACE FUNCTION cleanup_expired_cache()
+        RETURNS INTEGER AS $$
+        DECLARE
+            deleted_count INTEGER;
+        BEGIN
+            DELETE FROM cache WHERE expires_at < NOW();
+            GET DIAGNOSTICS deleted_count = ROW_COUNT;
+            RETURN deleted_count;
+        END;
+        $$ LANGUAGE plpgsql;
+    """)
+
+    # ========================================================================
+    # Database Triggers for Automation
+    # ========================================================================
+
+    # Trigger: Low stock alert via LISTEN/NOTIFY
+    op.execute("""
+        CREATE OR REPLACE FUNCTION notify_low_stock()
+        RETURNS TRIGGER AS $$
+        BEGIN
+            IF NEW.quantity_on_hand < NEW.reorder_point AND NEW.reorder_point IS NOT NULL THEN
+                PERFORM pg_notify(
+                    'low_stock_alert',
+                    json_build_object(
+                        'material_id', NEW.id,
+                        'material_code', NEW.material_code,
+                        'quantity', NEW.quantity_on_hand,
+                        'reorder_point', NEW.reorder_point,
+                        'organization_id', NEW.organization_id,
+                        'plant_id', NEW.plant_id
+                    )::text
+                );
+            END IF;
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+
+        DROP TRIGGER IF EXISTS tr_low_stock_alert ON materials;
+        CREATE TRIGGER tr_low_stock_alert
+        AFTER INSERT OR UPDATE OF quantity_on_hand ON materials
+        FOR EACH ROW
+        EXECUTE FUNCTION notify_low_stock();
+    """)
+
+    # Trigger: Work order status change notification
+    op.execute("""
+        CREATE OR REPLACE FUNCTION notify_work_order_status_change()
+        RETURNS TRIGGER AS $$
+        BEGIN
+            IF OLD.order_status IS DISTINCT FROM NEW.order_status THEN
+                PERFORM pg_notify(
+                    'work_order_status_changed',
+                    json_build_object(
+                        'work_order_id', NEW.id,
+                        'work_order_number', NEW.work_order_number,
+                        'old_status', OLD.order_status,
+                        'new_status', NEW.order_status,
+                        'organization_id', NEW.organization_id,
+                        'plant_id', NEW.plant_id
+                    )::text
+                );
+            END IF;
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+
+        DROP TRIGGER IF EXISTS tr_work_order_status_notification ON work_orders;
+        CREATE TRIGGER tr_work_order_status_notification
+        AFTER UPDATE OF order_status ON work_orders
+        FOR EACH ROW
+        EXECUTE FUNCTION notify_work_order_status_change();
+    """)
+
+    # Trigger: NCR creation notification (for critical/major NCRs)
+    op.execute("""
+        CREATE OR REPLACE FUNCTION notify_ncr_creation()
+        RETURNS TRIGGER AS $$
+        BEGIN
+            IF NEW.severity IN ('critical', 'major') THEN
+                PERFORM pg_notify(
+                    'ncr_created',
+                    json_build_object(
+                        'ncr_id', NEW.id,
+                        'ncr_number', NEW.ncr_number,
+                        'severity', NEW.severity,
+                        'defect_type', NEW.defect_type,
+                        'organization_id', NEW.organization_id,
+                        'plant_id', NEW.plant_id
+                    )::text
+                );
+            END IF;
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+
+        DROP TRIGGER IF EXISTS tr_ncr_creation_notification ON ncrs;
+        CREATE TRIGGER tr_ncr_creation_notification
+        AFTER INSERT ON ncrs
+        FOR EACH ROW
+        EXECUTE FUNCTION notify_ncr_creation();
     """)
 
     # ========================================================================

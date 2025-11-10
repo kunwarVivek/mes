@@ -106,12 +106,19 @@ def _set_rls_context(
         plant_id: Optional plant ID for plant-specific data access
     """
     # Always set organization_id (required for RLS)
-    db.execute(text(f"SET LOCAL app.current_organization_id = {organization_id}"))
+    # Using parameterized query to prevent SQL injection
+    db.execute(
+        text("SET LOCAL app.current_organization_id = :org_id"),
+        {"org_id": organization_id}
+    )
 
     # Only set plant_id if user has a plant assignment
     # Organization-level users (admins, managers) may not have plant assignments
     if plant_id is not None:
-        db.execute(text(f"SET LOCAL app.current_plant_id = {plant_id}"))
+        db.execute(
+            text("SET LOCAL app.current_plant_id = :plant_id"),
+            {"plant_id": plant_id}
+        )
 
 
 def get_user_context(request: Request) -> Dict[str, any]:
