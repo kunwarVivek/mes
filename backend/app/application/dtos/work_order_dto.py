@@ -167,3 +167,29 @@ class NotFoundErrorResponse(BaseModel):
 class ConflictErrorResponse(BaseModel):
     """Conflict error response"""
     detail: str = "Conflict with current state"
+
+
+class WorkOrderCostBreakdownResponse(BaseModel):
+    """DTO for work order cost breakdown response"""
+    work_order_id: int
+    work_order_number: str
+    quantity_ordered: float
+    quantity_completed: float
+    costs: dict = Field(description="Cost breakdown (material, labor, overhead, total)")
+    cost_per_unit: dict = Field(description="Cost per unit breakdown")
+    overhead_rate: float = Field(description="Overhead rate percentage")
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class WorkOrderCostVarianceResponse(BaseModel):
+    """DTO for work order cost variance analysis"""
+    work_order_id: int
+    work_order_number: str
+    actual_costs: dict = Field(description="Actual costs (material, labor, overhead, total)")
+    standard_costs: dict = Field(description="Standard/estimated costs (material, labor, overhead, total)")
+    variance: dict = Field(description="Variance amounts (actual - standard)")
+    variance_percentage: dict = Field(description="Variance percentages")
+
+    model_config = ConfigDict(from_attributes=True)
