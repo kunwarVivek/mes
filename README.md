@@ -38,10 +38,6 @@ psql -d unison -f database/schema/16_timescaledb_hypertables.sql
 sudo apt-get install pgmq postgresql-15-cron
 ```
 
-**Documentation**:
-- 📄 [AUDIT_SUMMARY.md](AUDIT_SUMMARY.md) - Executive summary
-- 📋 [AUDIT_AND_DEBT_IMPLEMENTATION_PLAN.md](AUDIT_AND_DEBT_IMPLEMENTATION_PLAN.md) - 10-week plan
-
 ---
 
 ## 🎯 Project Overview
