@@ -55,6 +55,16 @@ from app.models.workflow import (
     ApprovalStatus,
     ApprovalPriority
 )
+from app.models.logistics import (
+    Shipment,
+    ShipmentItem,
+    BarcodeLabel,
+    QRCodeScan,
+    ShipmentType,
+    ShipmentStatus,
+    BarcodeType,
+    ScanResolution
+)
 
 __all__ = [
     "User",
@@ -107,5 +117,13 @@ __all__ = [
     "WorkflowHistory",
     "StateType",
     "ApprovalStatus",
-    "ApprovalPriority"
+    "ApprovalPriority",
+    "Shipment",
+    "ShipmentItem",
+    "BarcodeLabel",
+    "QRCodeScan",
+    "ShipmentType",
+    "ShipmentStatus",
+    "BarcodeType",
+    "ScanResolution"
 ]
