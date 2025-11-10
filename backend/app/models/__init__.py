@@ -110,6 +110,11 @@ from app.models.traceability import (
     RelationshipType,
     OperationType
 )
+from app.models.branding import (
+    OrganizationBranding,
+    EmailTemplate,
+    TemplateType
+)
 
 __all__ = [
     "User",
@@ -207,5 +212,8 @@ __all__ = [
     "SerialStatus",
     "EntityType",
     "RelationshipType",
-    "OperationType"
+    "OperationType",
+    "OrganizationBranding",
+    "EmailTemplate",
+    "TemplateType"
 ]
