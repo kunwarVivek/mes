@@ -66,6 +66,21 @@ from app.application.dtos.workflow_dto import (
     ApprovalStatus,
     ApprovalPriority
 )
+from app.application.dtos.reporting_dto import (
+    ReportCreateDTO,
+    ReportUpdateDTO,
+    ReportResponse,
+    ReportExecuteDTO,
+    ReportExecutionResponse,
+    ReportExecutionListResponse,
+    DashboardCreateDTO,
+    DashboardUpdateDTO,
+    DashboardResponse,
+    DashboardDataRequest,
+    DashboardDataResponse,
+    KPICalculationRequest,
+    KPICalculationResponse
+)
 
 __all__ = [
     "CreateUserDTO",
@@ -132,5 +147,19 @@ __all__ = [
     "WorkflowStateChangeDTO",
     "StateType",
     "ApprovalStatus",
-    "ApprovalPriority"
+    "ApprovalPriority",
+    # Reporting DTOs
+    "ReportCreateDTO",
+    "ReportUpdateDTO",
+    "ReportResponse",
+    "ReportExecuteDTO",
+    "ReportExecutionResponse",
+    "ReportExecutionListResponse",
+    "DashboardCreateDTO",
+    "DashboardUpdateDTO",
+    "DashboardResponse",
+    "DashboardDataRequest",
+    "DashboardDataResponse",
+    "KPICalculationRequest",
+    "KPICalculationResponse"
 ]

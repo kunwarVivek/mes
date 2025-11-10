@@ -65,6 +65,16 @@ from app.models.logistics import (
     BarcodeType,
     ScanResolution
 )
+from app.models.reporting import (
+    Report,
+    ReportExecution,
+    Dashboard,
+    ReportType,
+    ReportCategory,
+    ExecutionStatus,
+    TriggerType,
+    DashboardType
+)
 
 __all__ = [
     "User",
@@ -125,5 +135,13 @@ __all__ = [
     "ShipmentType",
     "ShipmentStatus",
     "BarcodeType",
-    "ScanResolution"
+    "ScanResolution",
+    "Report",
+    "ReportExecution",
+    "Dashboard",
+    "ReportType",
+    "ReportCategory",
+    "ExecutionStatus",
+    "TriggerType",
+    "DashboardType"
 ]
