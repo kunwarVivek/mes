@@ -10,6 +10,15 @@ import { workOrdersRoute, workOrdersNewRoute } from './routes/work-orders'
 import { bomRoute } from './routes/bom'
 import { qualityRoute, qualityNcrsRoute, qualityNcrsNewRoute } from './routes/quality'
 import { equipmentRoute } from './routes/equipment'
+// Newly added routes
+import { projectsRoute } from './routes/projects'
+import { maintenanceRoute } from './routes/maintenance'
+import { shiftsRoute } from './routes/shifts'
+import { lanesRoute } from './routes/lanes'
+import { productionRoute } from './routes/production'
+import { productionPlansRoute } from './routes/production-plans'
+import { mrpRoute } from './routes/mrp'
+import { schedulingRoute } from './routes/scheduling'
 
 /**
  * TanStack Router Configuration
@@ -36,6 +45,14 @@ import { equipmentRoute } from './routes/equipment'
  *     - /quality/ncrs (NCR list)
  *     - /quality/ncrs/new (create NCR)
  *     - /equipment
+ *     - /projects (project management)
+ *     - /maintenance (PM schedules, work orders)
+ *     - /shifts (shift management)
+ *     - /lanes (lane-based scheduling)
+ *     - /production (production logging)
+ *     - /production-plans (production planning)
+ *     - /mrp (material requirements planning)
+ *     - /scheduling (visual Gantt scheduling)
  */
 
 // Build route tree with authenticated layout
@@ -54,6 +71,15 @@ const routeTree = rootRoute.addChildren([
     qualityNcrsRoute,
     qualityNcrsNewRoute,
     equipmentRoute,
+    // Newly added routes
+    projectsRoute,
+    maintenanceRoute,
+    shiftsRoute,
+    lanesRoute,
+    productionRoute,
+    productionPlansRoute,
+    mrpRoute,
+    schedulingRoute,
   ]),
 ])
 

@@ -1,7 +1,7 @@
 import { createRoute, redirect, Outlet } from '@tanstack/react-router'
 import { rootRoute } from './__root'
 import { AppLayout } from '../design-system/templates/AppLayout'
-import { useAuthStore } from '../features/auth/stores/authStore'
+import { useAuthStore } from '../stores/auth.store'
 
 /**
  * Authenticated Layout Route
