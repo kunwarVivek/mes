@@ -1,4 +1,31 @@
 from app.application.dtos.user_dto import CreateUserDTO, UpdateUserDTO, UserResponseDTO
+from app.application.dtos.role_dto import (
+    RoleCreateDTO,
+    RoleUpdateDTO,
+    RoleResponse,
+    UserRoleAssignDTO,
+    UserRoleRevokeDTO,
+    UserRoleResponse,
+    UserPlantAccessGrantDTO,
+    UserPlantAccessRevokeDTO,
+    UserPlantAccessResponse,
+    PermissionCheckRequest,
+    PermissionCheckResponse
+)
+from app.application.dtos.custom_field_dto import (
+    CustomFieldCreateDTO,
+    CustomFieldUpdateDTO,
+    CustomFieldResponse,
+    FieldValueSetDTO,
+    FieldValueResponse,
+    FieldValuesBulkSetDTO,
+    TypeListCreateDTO,
+    TypeListUpdateDTO,
+    TypeListResponse,
+    TypeListValueCreateDTO,
+    TypeListValueResponse,
+    EntityWithCustomFieldsResponse
+)
 from app.application.dtos.logistics_dto import (
     ShipmentCreateDTO,
     ShipmentUpdateDTO,
@@ -44,6 +71,32 @@ __all__ = [
     "CreateUserDTO",
     "UpdateUserDTO",
     "UserResponseDTO",
+    # RBAC DTOs
+    "RoleCreateDTO",
+    "RoleUpdateDTO",
+    "RoleResponse",
+    "UserRoleAssignDTO",
+    "UserRoleRevokeDTO",
+    "UserRoleResponse",
+    "UserPlantAccessGrantDTO",
+    "UserPlantAccessRevokeDTO",
+    "UserPlantAccessResponse",
+    "PermissionCheckRequest",
+    "PermissionCheckResponse",
+    # Custom Field DTOs
+    "CustomFieldCreateDTO",
+    "CustomFieldUpdateDTO",
+    "CustomFieldResponse",
+    "FieldValueSetDTO",
+    "FieldValueResponse",
+    "FieldValuesBulkSetDTO",
+    "TypeListCreateDTO",
+    "TypeListUpdateDTO",
+    "TypeListResponse",
+    "TypeListValueCreateDTO",
+    "TypeListValueResponse",
+    "EntityWithCustomFieldsResponse",
+    # Logistics DTOs
     "ShipmentCreateDTO",
     "ShipmentUpdateDTO",
     "ShipmentStatusUpdateDTO",
