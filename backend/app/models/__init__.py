@@ -75,6 +75,17 @@ from app.models.reporting import (
     TriggerType,
     DashboardType
 )
+from app.models.project_management import (
+    ProjectDocument,
+    ProjectMilestone,
+    RDADrawing,
+    ProjectBOM,
+    DocumentType,
+    MilestoneStatus,
+    RDAApprovalStatus,
+    RDAPriority,
+    BOMType as ProjectBOMType
+)
 
 __all__ = [
     "User",
@@ -143,5 +154,14 @@ __all__ = [
     "ReportCategory",
     "ExecutionStatus",
     "TriggerType",
-    "DashboardType"
+    "DashboardType",
+    "ProjectDocument",
+    "ProjectMilestone",
+    "RDADrawing",
+    "ProjectBOM",
+    "DocumentType",
+    "MilestoneStatus",
+    "RDAApprovalStatus",
+    "RDAPriority",
+    "ProjectBOMType"
 ]

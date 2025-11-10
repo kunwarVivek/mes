@@ -38,6 +38,10 @@ class Project(Base):
     organization = relationship("Organization", back_populates="projects")
     plant = relationship("Plant", back_populates="projects")
     bom = relationship("BOMHeader", back_populates="projects")
+    documents = relationship("ProjectDocument", back_populates="project", foreign_keys="ProjectDocument.project_id", cascade="all, delete-orphan")
+    milestones = relationship("ProjectMilestone", back_populates="project", foreign_keys="ProjectMilestone.project_id", cascade="all, delete-orphan")
+    rda_drawings = relationship("RDADrawing", back_populates="project", foreign_keys="RDADrawing.project_id", cascade="all, delete-orphan")
+    bom_items = relationship("ProjectBOM", back_populates="project", foreign_keys="ProjectBOM.project_id", cascade="all, delete-orphan")
 
     __table_args__ = (
         UniqueConstraint('plant_id', 'project_code', name='uq_project_code_per_plant'),
