@@ -4,6 +4,7 @@ import { authenticatedRoute } from './routes/_authenticated'
 import { indexRoute } from './routes/index'
 import { loginRoute } from './routes/login'
 import { registerRoute } from './routes/register'
+import { onboardingRoute } from './routes/onboarding'
 import { materialsRoute, materialsNewRoute } from './routes/materials'
 import { usersRoute } from './routes/users'
 import { workOrdersRoute, workOrdersNewRoute } from './routes/work-orders'
@@ -33,6 +34,7 @@ import { schedulingRoute } from './routes/scheduling'
  * - / (root)
  *   - /login (public)
  *   - /register (public)
+ *   - /onboarding (public - multi-step wizard)
  *   - /_authenticated (layout + auth guard)
  *     - / (dashboard)
  *     - /materials (list)
@@ -59,6 +61,7 @@ import { schedulingRoute } from './routes/scheduling'
 const routeTree = rootRoute.addChildren([
   loginRoute,
   registerRoute,
+  onboardingRoute,
   authenticatedRoute.addChildren([
     indexRoute,
     materialsRoute,

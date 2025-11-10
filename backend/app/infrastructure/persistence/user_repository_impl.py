@@ -61,6 +61,10 @@ class UserRepository(IUserRepository):
             db_user.is_active = user.is_active
             db_user.is_superuser = user.is_superuser
             db_user.updated_at = user.updated_at
+            db_user.onboarding_status = user.onboarding_status
+            db_user.verification_token = user.verification_token
+            db_user.verification_token_expires_at = user.verification_token_expires_at
+            db_user.onboarding_completed_at = user.onboarding_completed_at
 
             self._db.commit()
             self._db.refresh(db_user)
@@ -87,3 +91,10 @@ class UserRepository(IUserRepository):
         return self._db.query(UserModel).filter(
             UserModel.username == username.value
         ).first() is not None
+
+    def get_by_verification_token(self, token: str) -> Optional[UserEntity]:
+        """Get user by verification token"""
+        db_user = self._db.query(UserModel).filter(
+            UserModel.verification_token == token
+        ).first()
+        return self._mapper.to_entity(db_user) if db_user else None

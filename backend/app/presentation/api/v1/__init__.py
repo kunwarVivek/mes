@@ -1,8 +1,15 @@
 from fastapi import APIRouter
+<<<<<<< Updated upstream
 from app.presentation.api.v1 import users, auth, materials, machines, quality, shifts, maintenance, organizations, plants, departments, projects, production_logs, lanes, bom, roles, custom_fields, workflows, logistics, reporting, project_management, traceability, branding, infrastructure, inventory, inventory_alerts, metrics, scheduling
+||||||| Stash base
+from app.presentation.api.v1 import users, auth, materials, machines, quality, shifts, maintenance, organizations, plants, departments, projects, production_logs, lanes, bom, metrics
+=======
+from app.presentation.api.v1 import users, auth, materials, machines, quality, shifts, maintenance, organizations, plants, departments, projects, production_logs, lanes, bom, metrics, onboarding
+>>>>>>> Stashed changes
 
 api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
+api_router.include_router(onboarding.router, prefix="/onboarding", tags=["onboarding"])
 api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(roles.router, prefix="/roles", tags=["rbac"])
 api_router.include_router(custom_fields.router, tags=["configuration"])

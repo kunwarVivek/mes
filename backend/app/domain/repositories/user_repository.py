@@ -56,3 +56,13 @@ class IUserRepository(ABC):
     def exists_by_username(self, username: Username) -> bool:
         """Check if user exists by username"""
         pass
+
+    @abstractmethod
+    def get_by_verification_token(self, token: str) -> Optional[User]:
+        """Get user by verification token"""
+        pass
+
+    @abstractmethod
+    def get_by_phone_number(self, phone_number: str) -> Optional[User]:
+        """Get user by phone number"""
+        pass
