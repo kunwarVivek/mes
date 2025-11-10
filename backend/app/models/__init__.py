@@ -115,6 +115,22 @@ from app.models.branding import (
     EmailTemplate,
     TemplateType
 )
+from app.models.infrastructure import (
+    AuditLog,
+    Notification,
+    SystemSetting,
+    FileUpload,
+    SAPSyncLog,
+    SAPMapping,
+    AuditAction,
+    Severity,
+    NotificationPriority,
+    DeliveryChannel,
+    SettingType,
+    StorageProvider,
+    SyncDirection,
+    SyncStatus
+)
 
 __all__ = [
     "User",
@@ -215,5 +231,19 @@ __all__ = [
     "OperationType",
     "OrganizationBranding",
     "EmailTemplate",
-    "TemplateType"
+    "TemplateType",
+    "AuditLog",
+    "Notification",
+    "SystemSetting",
+    "FileUpload",
+    "SAPSyncLog",
+    "SAPMapping",
+    "AuditAction",
+    "Severity",
+    "NotificationPriority",
+    "DeliveryChannel",
+    "SettingType",
+    "StorageProvider",
+    "SyncDirection",
+    "SyncStatus"
 ]
