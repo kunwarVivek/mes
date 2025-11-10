@@ -1,8 +1,16 @@
-# PostgreSQL Extensions Module
+# PostgreSQL Extensions Python API
+
+**Module**: `backend/app/core/extensions.py`
+
+> **Note**: This document describes the Python API for managing PostgreSQL extensions. For documentation on **using the extensions themselves** (PGMQ, pg_cron, etc.), see:
+> - Quick reference: [EXTENSIONS_QUICKREF.md](./EXTENSIONS_QUICKREF.md)
+> - Detailed guides: [/docs/03-postgresql/](../../../docs/03-postgresql/)
+
+---
 
 ## Overview
 
-The `extensions.py` module provides utilities for managing and verifying PostgreSQL extensions required by Unison ERP.
+The `extensions.py` module provides Python utilities for verifying and managing PostgreSQL extensions required by Unison ERP. This is **infrastructure code** used during application startup and migrations.
 
 ## Required Extensions
 
@@ -13,30 +21,6 @@ The `extensions.py` module provides utilities for managing and verifying Postgre
 | **pg_duckdb** | Analytics and OLAP query acceleration | 10-100x faster queries |
 | **timescaledb** | Time-series data compression | 75% storage reduction |
 | **pg_cron** | Job scheduler for periodic tasks | Replaces Celery Beat |
-
-## Installation
-
-### Using Alembic Migration
-
-```bash
-cd backend
-alembic upgrade head
-```
-
-This runs the `001_install_postgresql_extensions` migration which:
-1. Creates all required extensions
-2. Verifies installation
-3. Provides detailed output
-
-### Manual Installation
-
-```sql
-CREATE EXTENSION IF NOT EXISTS pgmq;
-CREATE EXTENSION IF NOT EXISTS pg_search;
-CREATE EXTENSION IF NOT EXISTS pg_duckdb;
-CREATE EXTENSION IF NOT EXISTS timescaledb;
-CREATE EXTENSION IF NOT EXISTS pg_cron;
-```
 
 ## API Reference
 
@@ -55,7 +39,12 @@ with engine.connect() as conn:
         print("Missing extensions")
 ```
 
+**Parameters:**
+- `conn`: SQLAlchemy connection object
+
 **Returns:** `bool` - True if all extensions installed
+
+---
 
 ### get_extension_versions(conn)
 
@@ -66,7 +55,12 @@ versions = get_extension_versions(conn)
 # {'pgmq': '1.0.0', 'timescaledb': '2.11.0', ...}
 ```
 
+**Parameters:**
+- `conn`: SQLAlchemy connection object
+
 **Returns:** `Dict[str, str]` - Extension name to version mapping
+
+---
 
 ### get_missing_extensions(conn)
 
@@ -77,7 +71,12 @@ missing = get_missing_extensions(conn)
 # {'pg_duckdb', 'pg_search'}
 ```
 
+**Parameters:**
+- `conn`: SQLAlchemy connection object
+
 **Returns:** `Set[str]` - Set of missing extension names
+
+---
 
 ### verify_extensions_with_report(conn)
 
@@ -90,12 +89,17 @@ print(f"Missing: {report['missing']}")
 print(f"Versions: {report['versions']}")
 ```
 
+**Parameters:**
+- `conn`: SQLAlchemy connection object
+
 **Returns:** `Dict` with keys:
 - `all_installed`: bool
 - `installed`: List[str]
 - `missing`: List[str]
 - `versions`: Dict[str, str]
 - `total_required`: int
+
+---
 
 ### get_extension_info(conn, extension_name)
 
@@ -112,7 +116,13 @@ info = get_extension_info(conn, "pgmq")
 # }
 ```
 
+**Parameters:**
+- `conn`: SQLAlchemy connection object
+- `extension_name`: str - Name of extension to query
+
 **Returns:** `Dict[str, str]` - Extension details
+
+---
 
 ### get_all_available_extensions(conn)
 
@@ -123,7 +133,38 @@ available = get_all_available_extensions(conn)
 # [('pgmq', '1.0.0', 'Message queue'), ...]
 ```
 
+**Parameters:**
+- `conn`: SQLAlchemy connection object
+
 **Returns:** `List[Tuple[str, str, str]]` - (name, version, comment)
+
+---
+
+## Installation via Alembic
+
+### Using Migration
+
+```bash
+cd backend
+alembic upgrade head
+```
+
+This runs the `001_install_postgresql_extensions` migration which:
+1. Creates all required extensions
+2. Verifies installation
+3. Provides detailed output
+
+### Manual SQL Installation
+
+```sql
+CREATE EXTENSION IF NOT EXISTS pgmq;
+CREATE EXTENSION IF NOT EXISTS pg_search;
+CREATE EXTENSION IF NOT EXISTS pg_duckdb;
+CREATE EXTENSION IF NOT EXISTS timescaledb;
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+```
+
+---
 
 ## Testing
 
@@ -143,6 +184,8 @@ pytest tests/integration/test_extensions.py -v
 pytest tests/integration/test_migration_extensions.py -v
 ```
 
+---
+
 ## Troubleshooting
 
 ### Extension Not Available
@@ -151,7 +194,7 @@ pytest tests/integration/test_migration_extensions.py -v
 
 **Solution:** Install extension in PostgreSQL:
 - Use `tembo/tembo-pg-slim` Docker image (recommended)
-- Or install extensions manually (see `/docs/03-postgresql/EXTENSIONS.md`)
+- Or install extensions manually (see `/docs/03-postgresql/EXTENSIONS_OVERVIEW.md`)
 
 ### Permission Denied
 
@@ -166,15 +209,7 @@ ALTER USER unison WITH SUPERUSER;
 
 This is not an error. `CREATE EXTENSION IF NOT EXISTS` handles this gracefully.
 
-## Migration Rollback
-
-To remove all extensions:
-
-```bash
-alembic downgrade -1
-```
-
-**WARNING:** This drops extensions and all dependent objects with CASCADE.
+---
 
 ## Best Practices
 
@@ -183,6 +218,8 @@ alembic downgrade -1
 3. Handle missing extensions gracefully in application code
 4. Use connection pooling for verification checks
 5. Log extension versions on application startup
+
+---
 
 ## Example: Startup Verification
 
@@ -204,6 +241,20 @@ async def verify_extensions():
             logger.warning(f"Missing extensions: {report['missing']}")
 ```
 
+---
+
+## Migration Rollback
+
+To remove all extensions:
+
+```bash
+alembic downgrade -1
+```
+
+**WARNING:** This drops extensions and all dependent objects with CASCADE.
+
+---
+
 ## References
 
 - [PostgreSQL Extensions Documentation](https://www.postgresql.org/docs/current/contrib.html)
@@ -212,3 +263,13 @@ async def verify_extensions():
 - [DuckDB PostgreSQL Extension](https://duckdb.org/docs/extensions/postgres)
 - [TimescaleDB Documentation](https://docs.timescale.com/)
 - [pg_cron Documentation](https://github.com/citusdata/pg_cron)
+
+---
+
+**For extension usage guides, see:**
+- [/docs/03-postgresql/README.md](../../../docs/03-postgresql/README.md) - Index of all guides
+- [/docs/03-postgresql/EXTENSIONS_OVERVIEW.md](../../../docs/03-postgresql/EXTENSIONS_OVERVIEW.md) - Overview and installation
+- [/docs/03-postgresql/PGMQ_GUIDE.md](../../../docs/03-postgresql/PGMQ_GUIDE.md) - Message queue guide
+- [/docs/03-postgresql/PG_CRON_GUIDE.md](../../../docs/03-postgresql/PG_CRON_GUIDE.md) - Job scheduling guide
+- [/docs/03-postgresql/PG_SEARCH_GUIDE.md](../../../docs/03-postgresql/PG_SEARCH_GUIDE.md) - Full-text search guide
+- [/docs/03-postgresql/TIMESCALEDB_GUIDE.md](../../../docs/03-postgresql/TIMESCALEDB_GUIDE.md) - Time-series guide

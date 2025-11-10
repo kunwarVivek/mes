@@ -17,10 +17,11 @@ Requirements and functional specifications for the system.
   - 16 core feature requirements (Material, Production, Quality, Maintenance, MES modules)
   - Target: 83%+ MES coverage for MSME manufacturers
 
-- **[FRD (Functional Requirements Document)](./01-requirements/FRD.md)**
+- **[FRD (Functional Requirements Document)](./01-requirements/FRD_INDEX.md)**
   - Business rules, workflows, state machines
   - Data models and validation rules
   - API contracts and integration specifications
+  - **Note**: FRD is split into domain-specific files for better LLM readability
 
 ---
 
@@ -48,22 +49,17 @@ System architecture, technology stack, and design decisions.
   - Authentication & authorization
   - 150+ endpoint specifications
 
-- **[Deployment Guide](./02-architecture/DEPLOYMENT.md)**
-  - Docker Compose setup (3-4 containers)
-  - Production deployment considerations
-  - Health checks and monitoring
-
 ---
 
 ### 03. PostgreSQL-Native Stack
 PostgreSQL extensions and native features replacing traditional tech stack.
 
-- **[PostgreSQL Extensions Guide](./03-postgresql/EXTENSIONS.md)**
-  - **pgmq**: Message queue (30K msgs/sec) - replaces Celery + RabbitMQ
-  - **pg_cron**: Scheduled tasks - replaces Celery Beat
-  - **pg_search (ParadeDB)**: Full-text search with BM25 ranking - replaces Elasticsearch
-  - **pg_duckdb**: Analytics engine (10-1500x faster OLAP)
-  - **timescaledb**: Time-series optimization (75% compression)
+- **[PostgreSQL Extensions Index](./03-postgresql/README.md)**
+  - **[Overview](./03-postgresql/EXTENSIONS_OVERVIEW.md)**: Architecture decision, installation, troubleshooting
+  - **[PGMQ Guide](./03-postgresql/PGMQ_GUIDE.md)**: Message queue (30K msgs/sec) - replaces Celery + RabbitMQ
+  - **[pg_cron Guide](./03-postgresql/PG_CRON_GUIDE.md)**: Scheduled tasks - replaces Celery Beat
+  - **[pg_search Guide](./03-postgresql/PG_SEARCH_GUIDE.md)**: BM25 full-text search - replaces Elasticsearch
+  - **[TimescaleDB Guide](./03-postgresql/TIMESCALEDB_GUIDE.md)**: Time-series optimization (75% compression)
 
 - **[Migration Guide: Redis/Celery → PostgreSQL](./03-postgresql/MIGRATION_GUIDE.md)**
   - Step-by-step migration process
@@ -124,27 +120,13 @@ Detailed specifications for each business domain.
 ---
 
 ### 05. Implementation Guides
-Phase-wise development roadmap for developers.
+Development roadmap and best practices for developers.
 
-- **[Phase 1: Foundation (Weeks 1-8)](./05-implementation/PHASE_1_FOUNDATION.md)**
-  - Multi-tenancy, authentication, authorization
-  - Material management, project management
-  - 15 core tables, 25 API endpoints
-
-- **[Phase 2: Production Core (Weeks 9-16)](./05-implementation/PHASE_2_PRODUCTION_CORE.md)**
-  - Work orders, lanes, scheduling
-  - PWA mobile production logging
-  - 12 tables, 30 API endpoints
-
-- **[Phase 3: Quality & Analytics (Weeks 17-24)](./05-implementation/PHASE_3_QUALITY_ANALYTICS.md)**
-  - NCR workflows, KPI dashboards
-  - Reporting engine, OEE calculation
-  - 13 tables, 20 API endpoints
-
-- **[Phase 4: MES Modules (Weeks 25-32)](./05-implementation/PHASE_4_MES_MODULES.md)**
-  - Equipment, maintenance, shift management
-  - Visual scheduling, traceability
-  - 15 tables, 40 API endpoints
+- **[Developer Guide](./05-implementation/DEVELOPER_GUIDE.md)**
+  - Development environment setup
+  - Code structure and conventions
+  - Testing and deployment practices
+  - Common patterns and best practices
 
 ---
 
@@ -156,32 +138,25 @@ Phase-wise development roadmap for developers.
 1. Read `docs/README.md` (this file) first for navigation
 2. Load `docs/02-architecture/TECH_STACK.md` for technology decisions
 3. Load relevant domain docs from `04-domains/` based on feature scope
-4. Load implementation phase guide from `05-implementation/` for current sprint
-
-**Phase-Based Development:**
-- Each phase document is self-contained with:
-  - Database tables to create
-  - API endpoints to implement
-  - Domain services with business logic
-  - Frontend components to build
-  - Testing requirements
+4. Load `docs/01-requirements/FRD_INDEX.md` to find relevant functional requirements
+5. Load `docs/05-implementation/DEVELOPER_GUIDE.md` for development best practices
 
 ### For Architecture Reviews
 
 **Read in this order:**
 1. `02-architecture/OVERVIEW.md` → System understanding
 2. `02-architecture/TECH_STACK.md` → Technology decisions
-3. `03-postgresql/EXTENSIONS.md` → PostgreSQL-native rationale
+3. `03-postgresql/EXTENSIONS_OVERVIEW.md` → PostgreSQL-native rationale
 4. `02-architecture/DATABASE_SCHEMA.md` → Data model
 
 ### For Feature Development
 
 **Example: Implementing Maintenance Management**
-1. Read `01-requirements/FRD.md` → Section 2.14 (Business Rules)
+1. Read `01-requirements/FRD_MAINTENANCE.md` → Maintenance business rules & workflows
 2. Read `04-domains/MAINTENANCE.md` → Complete domain specification
-3. Read `05-implementation/PHASE_4_MES_MODULES.md` → Implementation guide
+3. Read `05-implementation/DEVELOPER_GUIDE.md` → Development best practices
 4. Read `02-architecture/DATABASE_SCHEMA.md` → Tables: pm_schedules, maintenance_work_orders
-5. Read `02-architecture/API_DESIGN.md` → API contracts for maintenance endpoints
+5. Read `01-requirements/FRD_API_CONTRACTS.md` → API contracts for maintenance endpoints
 
 ---
 
@@ -252,7 +227,7 @@ cd frontend && npm run dev
 ### Adding New Feature
 ```bash
 # 1. Update requirements
-docs/01-requirements/FRD.md → Add business rules
+docs/01-requirements/FRD_[DOMAIN].md → Add business rules
 
 # 2. Design database tables
 docs/02-architecture/DATABASE_SCHEMA.md → Add tables
@@ -261,10 +236,10 @@ docs/02-architecture/DATABASE_SCHEMA.md → Add tables
 docs/04-domains/[DOMAIN].md → Document service
 
 # 4. Implement API
-docs/02-architecture/API_DESIGN.md → Add endpoints
+docs/01-requirements/FRD_API_CONTRACTS.md → Add endpoints
 
-# 5. Update phase guide
-docs/05-implementation/PHASE_X.md → Add to checklist
+# 5. Follow best practices
+docs/05-implementation/DEVELOPER_GUIDE.md → Development guidelines
 ```
 
 ---
