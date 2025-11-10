@@ -81,6 +81,24 @@ from app.application.dtos.reporting_dto import (
     KPICalculationRequest,
     KPICalculationResponse
 )
+from app.application.dtos.project_management_dto import (
+    ProjectDocumentCreateDTO,
+    ProjectDocumentUpdateDTO,
+    ProjectDocumentResponse,
+    ProjectMilestoneCreateDTO,
+    ProjectMilestoneUpdateDTO,
+    ProjectMilestoneResponse,
+    RDADrawingCreateDTO,
+    RDADrawingUpdateDTO,
+    RDADrawingSubmitDTO,
+    RDADrawingReviewDTO,
+    RDADrawingResponse,
+    ProjectBOMCreateDTO,
+    ProjectBOMUpdateDTO,
+    ProjectBOMResponse,
+    DocumentVersionCreateDTO,
+    MilestoneProgressUpdateDTO
+)
 
 __all__ = [
     "CreateUserDTO",
@@ -161,5 +179,22 @@ __all__ = [
     "DashboardDataRequest",
     "DashboardDataResponse",
     "KPICalculationRequest",
-    "KPICalculationResponse"
+    "KPICalculationResponse",
+    # Project Management DTOs
+    "ProjectDocumentCreateDTO",
+    "ProjectDocumentUpdateDTO",
+    "ProjectDocumentResponse",
+    "ProjectMilestoneCreateDTO",
+    "ProjectMilestoneUpdateDTO",
+    "ProjectMilestoneResponse",
+    "RDADrawingCreateDTO",
+    "RDADrawingUpdateDTO",
+    "RDADrawingSubmitDTO",
+    "RDADrawingReviewDTO",
+    "RDADrawingResponse",
+    "ProjectBOMCreateDTO",
+    "ProjectBOMUpdateDTO",
+    "ProjectBOMResponse",
+    "DocumentVersionCreateDTO",
+    "MilestoneProgressUpdateDTO"
 ]
