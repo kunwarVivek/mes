@@ -86,6 +86,18 @@ from app.models.project_management import (
     RDAPriority,
     BOMType as ProjectBOMType
 )
+from app.models.quality_enhancement import (
+    InspectionPlan as QualityInspectionPlan,
+    InspectionPoint,
+    InspectionCharacteristic,
+    InspectionMeasurement,
+    PlanType,
+    AppliesTo,
+    FrequencyType,
+    CharacteristicType,
+    DataType,
+    ControlChartType
+)
 
 __all__ = [
     "User",
@@ -163,5 +175,15 @@ __all__ = [
     "MilestoneStatus",
     "RDAApprovalStatus",
     "RDAPriority",
-    "ProjectBOMType"
+    "ProjectBOMType",
+    "QualityInspectionPlan",
+    "InspectionPoint",
+    "InspectionCharacteristic",
+    "InspectionMeasurement",
+    "PlanType",
+    "AppliesTo",
+    "FrequencyType",
+    "CharacteristicType",
+    "DataType",
+    "ControlChartType"
 ]

@@ -99,6 +99,28 @@ from app.application.dtos.project_management_dto import (
     DocumentVersionCreateDTO,
     MilestoneProgressUpdateDTO
 )
+from app.application.dtos.quality_enhancement_dto import (
+    InspectionPlanCreateDTO,
+    InspectionPlanUpdateDTO,
+    InspectionPlanApprovalDTO,
+    InspectionPlanResponse,
+    InspectionPointCreateDTO,
+    InspectionPointUpdateDTO,
+    InspectionPointResponse,
+    InspectionCharacteristicCreateDTO,
+    InspectionCharacteristicUpdateDTO,
+    InspectionCharacteristicResponse,
+    InspectionMeasurementCreateDTO,
+    InspectionMeasurementBulkCreateDTO,
+    InspectionMeasurementResponse,
+    SPCAnalysisRequest,
+    SPCAnalysisResponse,
+    ControlChartDataRequest,
+    ControlChartDataPoint,
+    ControlChartDataResponse,
+    FPYCalculationRequest,
+    FPYResponse
+)
 
 __all__ = [
     "CreateUserDTO",
@@ -196,5 +218,26 @@ __all__ = [
     "ProjectBOMUpdateDTO",
     "ProjectBOMResponse",
     "DocumentVersionCreateDTO",
-    "MilestoneProgressUpdateDTO"
+    "MilestoneProgressUpdateDTO",
+    # Quality Enhancement DTOs
+    "InspectionPlanCreateDTO",
+    "InspectionPlanUpdateDTO",
+    "InspectionPlanApprovalDTO",
+    "InspectionPlanResponse",
+    "InspectionPointCreateDTO",
+    "InspectionPointUpdateDTO",
+    "InspectionPointResponse",
+    "InspectionCharacteristicCreateDTO",
+    "InspectionCharacteristicUpdateDTO",
+    "InspectionCharacteristicResponse",
+    "InspectionMeasurementCreateDTO",
+    "InspectionMeasurementBulkCreateDTO",
+    "InspectionMeasurementResponse",
+    "SPCAnalysisRequest",
+    "SPCAnalysisResponse",
+    "ControlChartDataRequest",
+    "ControlChartDataPoint",
+    "ControlChartDataResponse",
+    "FPYCalculationRequest",
+    "FPYResponse"
 ]
