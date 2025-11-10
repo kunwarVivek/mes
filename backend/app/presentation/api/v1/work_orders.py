@@ -27,6 +27,8 @@ from app.application.dtos.work_order_dto import (
     WorkOrderMaterialCreateRequest,
     WorkOrderOperationResponse,
     WorkOrderMaterialResponse,
+    WorkOrderCostBreakdownResponse,
+    WorkOrderCostVarianceResponse,
     ErrorResponse,
     ValidationErrorResponse,
     NotFoundErrorResponse,
@@ -624,3 +626,124 @@ def add_work_order_material(
     except Exception as e:
         logger.error(f"Failed to add material: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to add material")
+
+
+@router.get(
+    "/{work_order_id}/costs",
+    response_model=WorkOrderCostBreakdownResponse,
+    summary="Get work order cost breakdown",
+    description="Get detailed cost breakdown (material, labor, overhead) for a work order. Triggers real-time cost calculation.",
+    responses={
+        200: {"description": "Cost breakdown retrieved successfully"},
+        401: {"model": ErrorResponse, "description": "Unauthorized"},
+        404: {"model": NotFoundErrorResponse, "description": "Work order not found"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+    tags=["Work Orders", "Costing"],
+)
+def get_work_order_costs(
+    work_order_id: int,
+    hourly_rate: Optional[float] = Query(None, description="Hourly labor rate (defaults to $25/hour)"),
+    repository: WorkOrderRepository = Depends(get_work_order_repository),
+    user_context: dict = Depends(get_user_context),
+    db: Session = Depends(get_db),
+):
+    """
+    Get detailed cost breakdown for a work order.
+
+    **Cost Components**:
+    - **Material Cost**: Sum of all ISSUE transactions (from Phase 2 FIFO/LIFO costing)
+    - **Labor Cost**: Sum(production hours) × hourly_rate
+    - **Overhead Cost**: (Material + Labor) × 15% overhead rate
+    - **Total Cost**: Material + Labor + Overhead
+
+    **Cost Per Unit**: Each cost component divided by quantity_completed
+
+    This endpoint triggers real-time cost calculation to ensure fresh data.
+    """
+    try:
+        logger.info(f"Fetching cost breakdown for work order: {work_order_id}")
+
+        # Import here to avoid circular dependency
+        from app.application.services.work_order_costing_service import WorkOrderCostingService
+
+        # Initialize costing service
+        costing_service = WorkOrderCostingService(db)
+
+        # Update all costs (material, labor, overhead)
+        cost_breakdown = costing_service.update_all_costs(work_order_id, hourly_rate)
+
+        logger.info(f"Cost breakdown calculated successfully for work order {work_order_id}")
+        return WorkOrderCostBreakdownResponse(**cost_breakdown)
+
+    except ValueError as e:
+        # Work order not found
+        if "not found" in str(e).lower():
+            logger.warning(f"Work order not found: {work_order_id}")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        else:
+            logger.error(f"Validation error: {e}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    except Exception as e:
+        logger.error(f"Failed to fetch cost breakdown: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to fetch cost breakdown")
+
+
+@router.get(
+    "/{work_order_id}/variance",
+    response_model=WorkOrderCostVarianceResponse,
+    summary="Get work order cost variance analysis",
+    description="Compare actual costs vs standard/estimated costs. Shows variance amounts and percentages.",
+    responses={
+        200: {"description": "Cost variance analysis retrieved successfully"},
+        401: {"model": ErrorResponse, "description": "Unauthorized"},
+        404: {"model": NotFoundErrorResponse, "description": "Work order not found"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+    tags=["Work Orders", "Costing"],
+)
+def get_work_order_variance(
+    work_order_id: int,
+    repository: WorkOrderRepository = Depends(get_work_order_repository),
+    user_context: dict = Depends(get_user_context),
+    db: Session = Depends(get_db),
+):
+    """
+    Get cost variance analysis for a work order.
+
+    **Variance Analysis**:
+    - **Actual Costs**: Material, Labor, Overhead, Total
+    - **Standard Costs**: Expected/estimated costs (if available)
+    - **Variance**: Actual - Standard (positive = over budget, negative = under budget)
+    - **Variance %**: (Actual - Standard) / Standard × 100
+
+    Useful for identifying cost overruns and process improvement opportunities.
+    """
+    try:
+        logger.info(f"Fetching cost variance for work order: {work_order_id}")
+
+        # Import here to avoid circular dependency
+        from app.application.services.work_order_costing_service import WorkOrderCostingService
+
+        # Initialize costing service
+        costing_service = WorkOrderCostingService(db)
+
+        # Calculate variance
+        variance_analysis = costing_service.calculate_variance(work_order_id)
+
+        logger.info(f"Cost variance calculated successfully for work order {work_order_id}")
+        return WorkOrderCostVarianceResponse(**variance_analysis)
+
+    except ValueError as e:
+        # Work order not found
+        if "not found" in str(e).lower():
+            logger.warning(f"Work order not found: {work_order_id}")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        else:
+            logger.error(f"Validation error: {e}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    except Exception as e:
+        logger.error(f"Failed to fetch cost variance: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to fetch cost variance")
