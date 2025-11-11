@@ -1,10 +1,12 @@
 import { createRouter } from '@tanstack/react-router'
 import { rootRoute } from './routes/__root'
 import { authenticatedRoute } from './routes/_authenticated'
+import { landingRoute } from './routes/landing'
 import { indexRoute } from './routes/index'
 import { loginRoute } from './routes/login'
 import { registerRoute } from './routes/register'
 import { onboardingRoute } from './routes/onboarding'
+import { pricingRoute } from './routes/pricing'
 import { materialsRoute, materialsNewRoute } from './routes/materials'
 import { usersRoute } from './routes/users'
 import { workOrdersRoute, workOrdersNewRoute } from './routes/work-orders'
@@ -32,11 +34,13 @@ import { schedulingRoute } from './routes/scheduling'
  *
  * Route Structure:
  * - / (root)
+ *   - / (landing - public marketing page, redirects to /dashboard if authenticated)
  *   - /login (public)
  *   - /register (public)
  *   - /onboarding (public - multi-step wizard)
+ *   - /pricing (public - pricing page)
  *   - /_authenticated (layout + auth guard)
- *     - / (dashboard)
+ *     - /dashboard (authenticated dashboard)
  *     - /materials (list)
  *     - /materials/new (create)
  *     - /users
@@ -59,9 +63,11 @@ import { schedulingRoute } from './routes/scheduling'
 
 // Build route tree with authenticated layout
 const routeTree = rootRoute.addChildren([
+  landingRoute,
   loginRoute,
   registerRoute,
   onboardingRoute,
+  pricingRoute,
   authenticatedRoute.addChildren([
     indexRoute,
     materialsRoute,

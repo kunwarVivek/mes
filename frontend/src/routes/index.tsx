@@ -3,9 +3,9 @@ import { authenticatedRoute } from './_authenticated'
 import { DashboardPage } from '../pages/DashboardPage'
 
 /**
- * Dashboard Route (/)
+ * Dashboard Route (/dashboard)
  *
- * Root path - protected route:
+ * Dashboard path - protected route:
  * - Single Responsibility: Dashboard route config
  * - Protected: Requires authentication
  * - Component: DashboardPage
@@ -13,6 +13,6 @@ import { DashboardPage } from '../pages/DashboardPage'
 
 export const indexRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
-  path: '/',
+  path: '/dashboard',
   component: DashboardPage,
 })
