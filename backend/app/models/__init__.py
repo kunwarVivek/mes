@@ -137,6 +137,7 @@ from app.models.subscription import (
     InvoiceModel,
     SubscriptionAddOnModel
 )
+from app.models.admin_audit_log import AdminAuditLogModel
 
 __all__ = [
     "User",
@@ -255,5 +256,6 @@ __all__ = [
     "SubscriptionModel",
     "SubscriptionUsageModel",
     "InvoiceModel",
-    "SubscriptionAddOnModel"
+    "SubscriptionAddOnModel",
+    "AdminAuditLogModel"
 ]
