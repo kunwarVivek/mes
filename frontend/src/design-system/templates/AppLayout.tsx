@@ -2,6 +2,7 @@ import { ReactNode, useState } from 'react'
 import { Sidebar } from './Sidebar'
 import { Navbar } from './Navbar'
 import { Navigation } from '../../components/Navigation'
+import { TrialBanner } from '../../components/TrialBanner'
 import './AppLayout.css'
 
 /**
@@ -58,6 +59,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             onMenuClick={() => setSidebarOpen(!sidebarOpen)}
           />
         )}
+
+        {/* Trial Countdown Banner */}
+        <TrialBanner />
 
         {/* Main content */}
         <main className="app-layout__content" role="main">

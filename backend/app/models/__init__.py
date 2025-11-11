@@ -131,6 +131,13 @@ from app.models.infrastructure import (
     SyncDirection,
     SyncStatus
 )
+from app.models.subscription import (
+    SubscriptionModel,
+    SubscriptionUsageModel,
+    InvoiceModel,
+    SubscriptionAddOnModel
+)
+from app.models.admin_audit_log import AdminAuditLogModel
 
 __all__ = [
     "User",
@@ -245,5 +252,10 @@ __all__ = [
     "SettingType",
     "StorageProvider",
     "SyncDirection",
-    "SyncStatus"
+    "SyncStatus",
+    "SubscriptionModel",
+    "SubscriptionUsageModel",
+    "InvoiceModel",
+    "SubscriptionAddOnModel",
+    "AdminAuditLogModel"
 ]

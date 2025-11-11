@@ -29,6 +29,7 @@ class Organization(Base):
     # Relationships
     plants = relationship("Plant", back_populates="organization", cascade="all, delete-orphan")
     projects = relationship("Project", back_populates="organization", cascade="all, delete-orphan")
+    subscription = relationship("SubscriptionModel", back_populates="organization", uselist=False, cascade="all, delete-orphan")
 
     __table_args__ = (
         Index('idx_org_code', 'org_code'),

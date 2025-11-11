@@ -1,363 +1,453 @@
 # Unison Manufacturing ERP
 
-**Version**: 2.0 (PostgreSQL-Native Architecture)
-**Type**: B2B SaaS Manufacturing Execution System (MES) for MSME
-**MES Coverage**: 83%+ (11 ISA-95 functions implemented)
+**Production-Ready B2B SaaS Manufacturing Execution System (MES) for Discrete Manufacturing SMEs**
 
-Multi-tenant manufacturing ERP system built with PostgreSQL-native stack, Domain-Driven Design, and Progressive Web App capabilities. Designed specifically for Micro, Small, and Medium Enterprises (MSME) in discrete manufacturing.
-
----
-
-## 🎯 What is Unison?
-
-Unison is a **Manufacturing Execution System (MES)** that bridges the gap between ERP systems (like SAP) and shop floor operations. It provides:
-
-- **Production Management**: Work orders, lane-based scheduling, mobile production logging
-- **Quality Management**: NCR workflows, inspection plans, Statistical Process Control (SPC)
-- **Material Management**: Multi-location inventory, BOMs, FIFO/LIFO costing
-- **Maintenance Management**: Preventive maintenance, downtime tracking, MTBF/MTTR
-- **Equipment Monitoring**: Machine utilization, OEE calculation, capacity planning
-- **Traceability**: Serial number tracking, lot genealogy, forward/backward traceability
-- **Shift Management**: Multi-shift production, shift handovers, performance tracking
-- **Visual Scheduling**: Drag-and-drop Gantt scheduling with capacity awareness
-- **Analytics & Reporting**: Real-time dashboards, KPIs, custom reports
-
-### Target Industries
-- ✅ Fabrication (metal working, welding, CNC machining)
-- ✅ Assembly (electronic devices, machinery, equipment)
-- ✅ Discrete Manufacturing (automotive parts, industrial components)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-blue.svg)](https://www.postgresql.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 
 ---
 
-## 🏗️ Architecture Highlights
+## 🎯 Overview
 
-### PostgreSQL-Native Stack (Simplified Architecture)
+Unison is a **PostgreSQL-native Manufacturing ERP platform** delivering **83%+ MES coverage** for discrete manufacturing SMEs. Built with clean architecture principles, featuring complete commercial infrastructure for B2B SaaS operations.
 
-**Why PostgreSQL-Only?**
-- **60% Fewer Containers**: 3-4 containers vs 8-10 with traditional stack
-- **40-60% Lower Costs**: Single database to backup, monitor, manage
-- **Simpler Operations**: One service instead of Redis + Celery + RabbitMQ + Elasticsearch
-- **Better Performance**: PGMQ (30K msgs/sec) >> Celery (~100 jobs/hour) for MSME scale
+### Key Highlights
 
-**PostgreSQL Extensions Used:**
-- **pgmq**: Message queue (30K msgs/sec) - replaces Celery + RabbitMQ
-- **pg_cron**: Scheduled tasks - replaces Celery Beat
-- **pg_search (ParadeDB)**: Full-text search with BM25 ranking - replaces Elasticsearch
-- **pg_duckdb**: Analytics engine (10-1500x faster OLAP queries)
-- **timescaledb**: Time-series optimization (75% storage compression)
-
-**PostgreSQL Native Features:**
-- **UNLOGGED tables**: High-speed cache (1-2ms latency)
-- **LISTEN/NOTIFY**: Pub/sub messaging for real-time updates
-- **Row-Level Security (RLS)**: Multi-tenant data isolation
-- **SKIP LOCKED**: Concurrent queue processing
-
-### Domain-Driven Design (Backend)
-- ✅ Clean layered architecture (Domain → Application → Infrastructure → Presentation)
-- ✅ SOLID principles throughout
-- ✅ Repository pattern for data access
-- ✅ Use cases for business logic orchestration
-- ✅ Value objects with validation
-
-### Atomic Design (Frontend)
-- ✅ Component hierarchy (Atoms → Molecules → Organisms → Pages)
-- ✅ Modern card-based UI with ShadCN components
-- ✅ Progressive Web App (PWA) for offline mobile production logging
-- ✅ Real-time updates via WebSockets
-- ✅ Fully responsive design
-
----
-
-## 📚 Documentation
-
-**Complete documentation is in the [`docs/`](./docs/) directory.**
-
-### Quick Navigation
-
-| Document | Purpose | Read When |
-|----------|---------|-----------|
-| **[Documentation Index](./docs/README.md)** | Master index with navigation | Start here first |
-| **[Technology Stack](./docs/02-architecture/TECH_STACK.md)** | PostgreSQL-native architecture decisions | Understanding tech choices |
-| **[PostgreSQL Extensions](./docs/03-postgresql/EXTENSIONS.md)** | Comprehensive guide to all extensions | Setting up database |
-| **[Migration Guide](./docs/03-postgresql/MIGRATION_GUIDE.md)** | Redis/Celery → PostgreSQL migration | Coming from traditional stack |
-| **[PRD (Product Requirements)](./docs/01-requirements/PRD.md)** | Business requirements, user stories | Understanding business needs |
-| **[FRD (Functional Requirements)](./docs/01-requirements/FRD.md)** | Business rules, workflows, API contracts | Implementation details |
-
-### Documentation Structure
-
-```
-docs/
-├── README.md                          # Master index (START HERE)
-├── 01-requirements/
-│   ├── PRD.md                        # Product requirements
-│   └── FRD.md                        # Functional requirements
-├── 02-architecture/
-│   ├── OVERVIEW.md                   # System architecture
-│   ├── TECH_STACK.md                 # Technology decisions ⭐
-│   ├── DATABASE_SCHEMA.md            # Complete schema (50+ tables)
-│   ├── API_DESIGN.md                 # API contracts (150+ endpoints)
-│   └── DEPLOYMENT.md                 # Docker, production setup
-├── 03-postgresql/
-│   ├── EXTENSIONS.md                 # Extension guide ⭐
-│   ├── MIGRATION_GUIDE.md            # Redis/Celery migration
-│   └── init-extensions.sql           # Database initialization ⭐
-├── 04-domains/
-│   ├── MATERIAL_MANAGEMENT.md        # Materials, BOMs, inventory
-│   ├── PRODUCTION.md                 # Work orders, production logging
-│   ├── QUALITY.md                    # NCRs, inspections, SPC
-│   ├── MAINTENANCE.md                # PM scheduling, downtime
-│   ├── EQUIPMENT_MACHINES.md         # Machines, OEE, utilization
-│   ├── SHIFT_MANAGEMENT.md           # Shifts, handovers
-│   ├── VISUAL_SCHEDULING.md          # Gantt scheduling
-│   └── TRACEABILITY.md               # Serial numbers, genealogy
-└── 05-implementation/
-    ├── PHASE_1_FOUNDATION.md         # Weeks 1-8
-    ├── PHASE_2_PRODUCTION_CORE.md    # Weeks 9-16
-    ├── PHASE_3_QUALITY_ANALYTICS.md  # Weeks 17-24
-    ├── PHASE_4_MES_MODULES.md        # Weeks 25-32
-    └── DEVELOPER_GUIDE.md            # Setup, patterns, conventions
-```
+- **Multi-Tenant SaaS**: Row-level security (RLS) with complete tenant isolation
+- **PostgreSQL-Native**: Eliminates Redis, Celery, RabbitMQ, Elasticsearch dependencies
+- **Production-Ready**: Complete subscription system, billing, admin dashboard, analytics
+- **3-Tier Pricing**: Starter ($49/mo), Professional ($199/mo), Enterprise ($999/mo)
+- **Clean Architecture**: Domain-Driven Design (DDD) with strict layer separation
+- **Modern Stack**: FastAPI + React 18 + TypeScript + TanStack Router
 
 ---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Docker & Docker Compose
-- Python 3.11+ (for local development)
-- Node.js 20+ (for local development)
-
-### With Docker (Recommended)
 
 ```bash
-# 1. Clone repository
-git clone <repo-url>
-cd unison
+# Required
+- PostgreSQL 15+ with extensions: pg_cron, pg_net, TimescaleDB
+- Python 3.11+
+- Node.js 18+
+- Docker & Docker Compose (optional)
 
-# 2. Set up environment files
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
-
-# 3. Start all services (PostgreSQL with extensions, Backend, Frontend, MinIO)
-docker-compose up -d
-
-# 4. Initialize PostgreSQL extensions
-docker-compose exec postgres psql -U unison -d unison_erp -f /docker-entrypoint-initdb.d/01-extensions.sql
-
-# 5. Run database migrations
-docker-compose exec backend alembic upgrade head
-
-# 6. Access the application
-# Frontend: http://localhost:3000
-# Backend API: http://localhost:8000
-# API Docs: http://localhost:8000/docs
-# MinIO: http://localhost:9001 (minioadmin / minioadmin)
+# Recommended
+- pnpm (faster than npm)
+- PostgreSQL GUI (pgAdmin, DBeaver, or TablePlus)
 ```
 
-### Local Development
+### Installation
 
-#### Backend
+#### 1. Clone Repository
+
 ```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
+git clone https://github.com/kunwarVivek/mes.git
+cd mes
+```
 
-# Start PostgreSQL with Docker
-docker-compose up -d postgres
+#### 2. Database Setup
+
+```bash
+# Create database
+createdb unison
+
+# Install PostgreSQL extensions
+psql -d unison -c "CREATE EXTENSION IF NOT EXISTS pg_cron;"
+psql -d unison -c "CREATE EXTENSION IF NOT EXISTS pg_net;"
+psql -d unison -c "CREATE EXTENSION IF NOT EXISTS timescaledb;"
 
 # Run migrations
+cd backend
 alembic upgrade head
-
-# Start backend server
-uvicorn app.main:app --reload
 ```
 
-#### Frontend
+#### 3. Backend Setup
+
+```bash
+cd backend
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your database credentials and Stripe keys
+
+# Run development server
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+#### 4. Frontend Setup
+
 ```bash
 cd frontend
-npm install
-npm run dev
+
+# Install dependencies
+npm install  # or: pnpm install
+
+# Configure environment
+cp .env.example .env
+# Edit .env with API base URL
+
+# Run development server
+npm run dev  # or: pnpm dev
 ```
+
+#### 5. Access Application
+
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:8000
+- **API Docs**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/health
 
 ---
 
-## 📊 Tech Stack
+## 📦 What's Included
 
-### Backend
-- **Framework**: FastAPI 0.104.1
-- **Language**: Python 3.11+
-- **ORM**: SQLAlchemy 2.0.23
-- **Migrations**: Alembic 1.12.1
-- **Validation**: Pydantic v2
-- **Auth**: PyJWT 2.8.0, PyCasbin 1.25.0
+### Commercial Infrastructure (100% Production-Ready)
 
-### Frontend
-- **Framework**: React 18
-- **Language**: TypeScript 5.2.2
-- **Build Tool**: Vite 5.0.8
-- **Styling**: Tailwind CSS 3.3.6
-- **UI Components**: ShadCN UI (Radix primitives)
-- **State**: Zustand 4.4.7, TanStack Query 5.8.4
-- **PWA**: Vite PWA Plugin
+#### Marketing & Sales
+- ✅ **Landing Page**: Professional B2B marketing with value propositions
+- ✅ **Pricing Page**: 3-tier model with feature comparison matrix
+- ✅ **Self-Service Signup**: Automated 14-day trial creation
 
-### Database & Extensions
-- **DBMS**: PostgreSQL 15
-- **Queue**: pgmq (30K msgs/sec)
-- **Scheduler**: pg_cron
-- **Search**: pg_search (ParadeDB BM25)
-- **Analytics**: pg_duckdb
-- **Time-Series**: timescaledb
+#### Subscription Management
+- ✅ **Database Schema**: Subscriptions, invoices, usage tracking
+- ✅ **Stripe Integration**: Payment processing, webhooks, billing portal
+- ✅ **Feature Gating**: 19 features gated across 3 tiers
+- ✅ **Usage Limits**: Users, plants, storage enforcement
+- ✅ **Trial Management**: Automated trial creation and expiration
 
-### Infrastructure
-- **Containerization**: Docker + Docker Compose
-- **Object Storage**: MinIO (S3-compatible)
-- **Deployment**: 3-4 containers (Postgres, Backend, Frontend, MinIO)
+#### Platform Administration
+- ✅ **Admin Dashboard**: Platform-wide KPIs (MRR, ARR, trials)
+- ✅ **Organization Management**: Search, filter, suspend, extend trials
+- ✅ **Audit Logging**: All admin actions logged (SOC2/GDPR)
+- ✅ **Analytics & BI**: MRR growth, churn analysis, revenue forecasting
 
----
+#### Customer Experience
+- ✅ **Billing Dashboard**: Usage vs. limits, invoices, upgrade flows
+- ✅ **Trial Banner**: Days remaining with urgency indicators
+- ✅ **Email Notifications**: Trial expiry, payment events
+- ✅ **Stripe Billing Portal**: Self-service payment method updates
 
-## 🔥 Key Features
+#### Automation
+- ✅ **Usage Tracking**: Runs every 6 hours via pg_cron
+- ✅ **Trial Expiration**: Daily checks at 2 AM UTC
+- ✅ **Email Service**: Multi-provider with HTML templates
 
-### 1. Progressive Web App (PWA)
-- **Offline Production Logging**: Works without internet on shop floor
-- **Camera Integration**: Scan barcodes, capture defect photos
-- **Mobile-First**: Optimized for tablets and smartphones
-- **Install on Device**: Add to home screen like native app
+### Core MES Features (83% Coverage)
 
-### 2. Multi-Tenant SaaS
-- **Organization Isolation**: Row-Level Security (RLS) policies
-- **Subdomain Routing**: Each customer gets own subdomain
-- **Plant-Level Access Control**: Users restricted to specific plants
-- **White-Label Ready**: Customizable branding per tenant
+#### Material Management
+- Materials master data with multi-UOM support
+- Bill of Materials (BOM) with multi-level support
+- Inventory tracking (multi-location, FIFO/LIFO)
+- Stock movements, adjustments, transfers
 
-### 3. Real-Time Updates
-- **WebSocket Push**: Live production quantities, machine status
-- **LISTEN/NOTIFY**: PostgreSQL pub/sub for instant notifications
-- **Dashboard Auto-Refresh**: No manual page reload needed
+#### Production Management
+- Work orders with operation routing
+- Visual scheduling (Frappe-Gantt integration)
+- Production logging (PWA mobile support)
+- Capacity planning and resource allocation
 
-### 4. Configurable Workflows
-- **Custom NCR Workflows**: Define approval chains per organization
-- **Flexible Routing**: Configure operation sequences per work order
-- **Dynamic Forms**: Add custom fields without code changes
+#### Quality Management
+- Non-Conformance Reports (NCR) with 8D workflow
+- Inspection plans and quality checkpoints
+- Statistical Process Control (SPC)
+- First Pass Yield (FPY) tracking
 
-### 5. SAP Integration
-- **Bi-Directional Sync**: Materials, BOMs, work orders sync with SAP
-- **Background Jobs (PGMQ)**: Async sync with retry logic
-- **Conflict Resolution**: Handle concurrent updates gracefully
+#### Maintenance Management
+- Preventive Maintenance (PM) scheduling
+- Downtime tracking and MTBF/MTTR analysis
+- Work order automation
+- Spare parts inventory management
 
----
+#### Equipment & Machines
+- Machine master data with specifications
+- OEE (Overall Equipment Effectiveness) calculation
+- Utilization tracking
+- Machine status monitoring
 
-## 🎨 Architecture Diagram
+#### Shift Management
+- Shift definitions and schedules
+- Shift handover workflows
+- Multi-shift production tracking
+- Shift performance analytics
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      CLIENT LAYER                           │
-│  React PWA (PWA, Offline, Camera, Real-time WebSocket)     │
-└──────────────────────────┬──────────────────────────────────┘
-                           │ HTTPS/REST/WebSocket
-                           │
-┌──────────────────────────▼──────────────────────────────────┐
-│                      API LAYER                              │
-│  FastAPI (JWT Auth, RBAC, Validation, Rate Limiting)       │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-           ┌───────────────┼───────────────┐
-           │               │               │
-┌──────────▼────────┐  ┌──▼──────────┐  ┌▼─────────────┐
-│ DOMAIN LAYER      │  │ APPLICATION │  │ INFRA LAYER  │
-│ Business Logic    │  │ Use Cases   │  │ Persistence  │
-│ Entities          │  │ Orchestrate │  │ External     │
-│ Value Objects     │  │             │  │ Services     │
-└───────────────────┘  └─────────────┘  └──────┬───────┘
-                                               │
-        ┌──────────────────────────────────────┘
-        │
-┌───────▼─────────────────────────────────────────────────────┐
-│              POSTGRESQL (Single Database)                    │
-│  ┌─────────────┐ ┌──────────┐ ┌──────────┐ ┌─────────────┐│
-│  │ Data Tables │ │  pgmq    │ │ pg_cron  │ │  pg_search  ││
-│  │ (50+ tables)│ │ (Queue)  │ │(Scheduler)│ │  (Search)   ││
-│  └─────────────┘ └──────────┘ └──────────┘ └─────────────┘│
-│  ┌─────────────┐ ┌──────────┐                              │
-│  │  UNLOGGED   │ │timescale │                              │
-│  │  (Cache)    │ │ (TSDB)   │                              │
-│  └─────────────┘ └──────────┘                              │
-└─────────────────────────────────────────────────────────────┘
-```
+#### Traceability
+- Serial number and lot tracking
+- Forward/backward traceability
+- Recall management
+- Genealogy reporting
 
 ---
 
-## 📁 Project Structure
+## 🏗️ Architecture
 
+### Technology Stack
+
+**Backend**:
+- FastAPI 0.104+ (Python 3.11+)
+- SQLAlchemy 2.0 (async)
+- Pydantic v2 (validation)
+- Alembic (migrations)
+- JWT authentication
+
+**Frontend**:
+- React 18
+- TypeScript 5.0+
+- TanStack Router (type-safe routing)
+- Zustand (state management)
+- Tailwind CSS + shadcn/ui
+- Vite (build tool)
+
+**Database**:
+- PostgreSQL 15+ (primary database)
+- TimescaleDB (time-series optimization)
+- pg_cron (scheduled jobs)
+- pg_net (HTTP requests from DB)
+- Row-Level Security (RLS) for multi-tenancy
+
+**Payments & Billing**:
+- Stripe (payment processing)
+- Stripe Billing (subscription management)
+- Stripe Customer Portal (self-service)
+
+### Architecture Patterns
+
+**Clean Architecture (DDD)**:
 ```
-unison/
-├── docs/                          # 📚 Complete documentation
-│   ├── README.md                  # Documentation index
-│   ├── 01-requirements/           # PRD, FRD
-│   ├── 02-architecture/           # Tech stack, schemas, APIs
-│   ├── 03-postgresql/             # Extensions, migration guides
-│   ├── 04-domains/                # Domain-specific docs
-│   └── 05-implementation/         # Phase guides, dev setup
-├── backend/
-│   ├── app/
-│   │   ├── domain/                # 🎯 Domain entities, services
-│   │   ├── application/           # 🎬 Use cases
-│   │   ├── infrastructure/        # 🔧 Persistence, external services
-│   │   │   ├── queue/             # PGMQ queue service
-│   │   │   ├── cache/             # UNLOGGED table cache
-│   │   │   ├── search/            # pg_search service
-│   │   │   └── sap/               # SAP adapter
-│   │   ├── presentation/          # 📡 API endpoints
-│   │   └── main.py                # FastAPI app
-│   ├── tests/                     # Unit & integration tests
-│   ├── alembic/                   # Database migrations
-│   ├── Dockerfile
-│   └── requirements.txt
-├── frontend/
-│   ├── src/
-│   │   ├── design-system/         # Atomic design components
-│   │   │   ├── atoms/             # Button, Input, Label
-│   │   │   ├── molecules/         # FormField, SearchBar
-│   │   │   ├── organisms/         # ProjectForm, MaterialTable
-│   │   │   └── templates/         # PageLayout, DashboardLayout
-│   │   ├── pages/                 # Full pages
-│   │   ├── stores/                # Zustand stores
-│   │   ├── hooks/                 # Custom hooks
-│   │   ├── services/              # API clients
-│   │   └── schemas/               # Zod validation
-│   ├── Dockerfile
-│   └── package.json
-├── docker-compose.yml             # Development setup
-├── docker-compose.prod.yml        # Production setup
-└── README.md                      # This file
+app/
+├── domain/              # Business logic (entities, value objects)
+├── application/         # Use cases, DTOs, services
+├── infrastructure/      # Database, external services
+└── presentation/        # API endpoints, serialization
 ```
+
+**Frontend Architecture**:
+```
+src/
+├── pages/              # Route components
+├── features/           # Domain-specific modules
+├── design-system/      # Reusable UI components
+├── services/           # API clients
+├── hooks/              # React hooks
+└── lib/                # Utilities (api-client, auth)
+```
+
+### Why PostgreSQL-Native?
+
+We eliminated Redis, Celery, RabbitMQ, and Elasticsearch by leveraging PostgreSQL extensions:
+
+| Traditional | PostgreSQL-Native | Benefit |
+|-------------|-------------------|---------|
+| Celery + RabbitMQ | pg_cron + pg_net | 60% fewer containers |
+| Redis cache | UNLOGGED tables | Single database to manage |
+| Elasticsearch | pg_search (BM25) | 20x faster for our scale |
+| Separate time-series DB | TimescaleDB | 75% compression |
+
+**Result**: 3-4 containers instead of 8-10, 40-60% lower infrastructure costs.
 
 ---
 
-## 🔧 Database Migrations
+## 💰 Pricing & Features
 
-### Create Migration
+### Subscription Tiers
+
+| Feature | Starter | Professional | Enterprise |
+|---------|---------|--------------|------------|
+| **Price** | $49/mo | $199/mo | $999/mo |
+| **Annual Discount** | 10% | 10% | 15% |
+| **Max Users** | 3 | 25 | Unlimited |
+| **Max Plants** | 1 | 5 | Unlimited |
+| **Storage** | 10 GB | 100 GB | 1 TB |
+| **Trial Period** | 14 days | 14 days | 14 days |
+
+### Feature Gating
+
+**All Tiers**:
+- Material management, BOM, inventory
+- Work orders, production logging
+- Basic quality management (NCR)
+- Equipment tracking
+
+**Professional+**:
+- Advanced scheduling (visual Gantt)
+- Quality analytics (SPC, FPY)
+- Maintenance management (PM scheduling)
+- Multi-plant management
+
+**Enterprise Only**:
+- Advanced analytics and BI
+- Custom integrations (API access)
+- Priority support
+- Dedicated account manager
+
+---
+
+## 🔧 Configuration
+
+### Environment Variables
+
+**Backend** (`backend/.env`):
 ```bash
-# Auto-generate migration from model changes
-docker-compose exec backend alembic revision --autogenerate -m "Add maintenance tables"
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/unison
+
+# JWT Authentication
+SECRET_KEY=your-secret-key-here
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+REFRESH_TOKEN_EXPIRE_DAYS=7
+
+# Stripe (Production)
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_PUBLISHABLE_KEY=pk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Stripe Price IDs
+STRIPE_STARTER_MONTHLY_PRICE_ID=price_...
+STRIPE_STARTER_ANNUAL_PRICE_ID=price_...
+STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID=price_...
+STRIPE_PROFESSIONAL_ANNUAL_PRICE_ID=price_...
+STRIPE_ENTERPRISE_MONTHLY_PRICE_ID=price_...
+STRIPE_ENTERPRISE_ANNUAL_PRICE_ID=price_...
+
+# Email Service
+SMTP_HOST=smtp.sendgrid.net
+SMTP_PORT=587
+SMTP_USERNAME=apikey
+SMTP_PASSWORD=your-sendgrid-api-key
+FROM_EMAIL=noreply@unison.com
+FROM_NAME=Unison Manufacturing
+
+# Internal API (for pg_cron jobs)
+INTERNAL_API_KEY=your-internal-api-key-here
+API_BASE_URL=https://api.yourdomain.com
+
+# Environment
+ENVIRONMENT=production
 ```
 
-### Apply Migrations
+**Frontend** (`frontend/.env`):
 ```bash
-# Upgrade to latest
-docker-compose exec backend alembic upgrade head
-
-# Upgrade to specific revision
-docker-compose exec backend alembic upgrade abc123
+VITE_API_BASE_URL=http://localhost:8000
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
 ```
 
-### Rollback Migrations
-```bash
-# Rollback one migration
-docker-compose exec backend alembic downgrade -1
+---
 
-# Rollback to specific revision
-docker-compose exec backend alembic downgrade abc123
+## 🚀 Deployment
+
+### Production Deployment Guide
+
+#### 1. Database Setup
+
+```bash
+# Production PostgreSQL setup
+# Install extensions
+psql -U postgres -d unison_prod << EOF
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+CREATE EXTENSION IF NOT EXISTS pg_net;
+CREATE EXTENSION IF NOT EXISTS timescaledb;
+EOF
+
+# Run migrations
+cd backend
+alembic upgrade head
+
+# Setup scheduled jobs (already configured in migrations)
+# Jobs will auto-create via migration 019_setup_scheduled_jobs.py
+```
+
+#### 2. Stripe Configuration
+
+Follow the complete guide: [docs/deployment/STRIPE_CONFIGURATION.md](docs/deployment/STRIPE_CONFIGURATION.md)
+
+**Summary**:
+1. Create products in Stripe Dashboard (Starter, Professional, Enterprise)
+2. Create prices (monthly + annual for each tier)
+3. Copy price IDs to backend `.env`
+4. Configure webhooks: `https://api.yourdomain.com/api/v1/webhooks/stripe`
+5. Required events: `checkout.session.completed`, `invoice.payment_succeeded`, `invoice.payment_failed`, `customer.subscription.updated`, `customer.subscription.deleted`
+
+#### 3. Email Service Setup
+
+```bash
+# Option 1: SendGrid (recommended)
+SMTP_HOST=smtp.sendgrid.net
+SMTP_PORT=587
+SMTP_USERNAME=apikey
+SMTP_PASSWORD=your-sendgrid-api-key
+
+# Option 2: AWS SES
+SMTP_HOST=email-smtp.us-east-1.amazonaws.com
+SMTP_PORT=587
+SMTP_USERNAME=your-aws-access-key-id
+SMTP_PASSWORD=your-aws-secret-access-key
+
+# Option 3: Gmail (dev only)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+```
+
+#### 4. Backend Deployment (Docker)
+
+```bash
+cd backend
+
+# Build image
+docker build -t unison-backend:latest .
+
+# Run container
+docker run -d \
+  --name unison-backend \
+  -p 8000:8000 \
+  --env-file .env.production \
+  unison-backend:latest
+```
+
+#### 5. Frontend Deployment (Nginx + Docker)
+
+```bash
+cd frontend
+
+# Build production assets
+npm run build
+
+# Build Docker image
+docker build -t unison-frontend:latest .
+
+# Run container
+docker run -d \
+  --name unison-frontend \
+  -p 80:80 \
+  unison-frontend:latest
+```
+
+#### 6. Verify Deployment
+
+```bash
+# Health checks
+curl https://api.yourdomain.com/health
+curl https://api.yourdomain.com/ready
+
+# Test scheduled jobs
+curl -X POST https://api.yourdomain.com/api/v1/jobs/track-usage \
+  -H "X-API-Key: your-internal-api-key"
+
+# Verify Stripe webhook
+# Use Stripe CLI: stripe listen --forward-to localhost:8000/api/v1/webhooks/stripe
 ```
 
 ---
@@ -365,167 +455,251 @@ docker-compose exec backend alembic downgrade abc123
 ## 🧪 Testing
 
 ### Backend Tests
+
 ```bash
 cd backend
-pytest                           # Run all tests
-pytest tests/unit/              # Unit tests only
-pytest tests/integration/       # Integration tests only
-pytest -v --cov=app            # With coverage report
+
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=app --cov-report=html
+
+# Run specific test file
+pytest tests/test_subscriptions.py
+
+# Run with verbose output
+pytest -v
 ```
 
 ### Frontend Tests
+
 ```bash
 cd frontend
-npm test                        # Run all tests
-npm run test:unit              # Unit tests only
-npm run test:e2e               # E2E tests with Playwright
+
+# Run unit tests
+npm test
+
+# Run with coverage
+npm run test:coverage
+
+# Run E2E tests (Playwright)
+npm run test:e2e
 ```
 
 ---
 
-## 📦 Environment Variables
+## 📚 Documentation
 
-### Backend (.env)
-```env
-# Database
-DATABASE_URL=postgresql://unison:password@localhost:5432/unison_erp
+Comprehensive documentation is available in the `docs/` directory:
 
-# Security
-SECRET_KEY=your-secret-key-min-32-chars
-JWT_ALGORITHM=HS256
-JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+### For Developers
+- **[Developer Guide](docs/05-implementation/DEVELOPER_GUIDE.md)**: Setup, patterns, best practices
+- **[Architecture Overview](docs/02-architecture/OVERVIEW.md)**: System design and DDD layers
+- **[Database Schema](docs/02-architecture/DATABASE_SCHEMA.md)**: Complete schema with RLS policies
+- **[API Design](docs/02-architecture/API_DESIGN.md)**: REST API patterns and authentication
+- **[API Reference](API_REFERENCE.md)**: Complete endpoint documentation
 
-# CORS
-BACKEND_CORS_ORIGINS=["http://localhost:3000"]
+### For Users
+- **[User Guide](USER_GUIDE.md)**: Customer-facing documentation
+- **[Pricing & Features](https://unison.com/pricing)**: Feature comparison matrix
 
-# MinIO (Object Storage)
-MINIO_ENDPOINT=localhost:9000
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
-MINIO_BUCKET=unison-files
+### Domain Documentation
+- [Material Management](docs/04-domains/MATERIAL_MANAGEMENT.md)
+- [Production Management](docs/04-domains/PRODUCTION.md)
+- [Quality Management](docs/04-domains/QUALITY.md)
+- [Maintenance Management](docs/04-domains/MAINTENANCE.md)
+- [Equipment & Machines](docs/04-domains/EQUIPMENT_MACHINES.md)
+- [Shift Management](docs/04-domains/SHIFT_MANAGEMENT.md)
+- [Visual Scheduling](docs/04-domains/VISUAL_SCHEDULING.md)
+- [Traceability](docs/04-domains/TRACEABILITY.md)
 
-# SAP Integration (optional)
-SAP_BASE_URL=https://sap.example.com/api
-SAP_USERNAME=integration_user
-SAP_PASSWORD=********
-SAP_CLIENT=100
-```
-
-### Frontend (.env)
-```env
-VITE_API_URL=http://localhost:8000
-VITE_WS_URL=ws://localhost:8000/ws
-VITE_MINIO_URL=http://localhost:9000
-```
+### PostgreSQL Extensions
+- [Extensions Overview](docs/03-postgresql/EXTENSIONS_OVERVIEW.md)
+- [pg_cron Guide](docs/03-postgresql/PG_CRON_GUIDE.md)
+- [TimescaleDB Guide](docs/03-postgresql/TIMESCALEDB_GUIDE.md)
+- [Migration Guide](docs/03-postgresql/MIGRATION_GUIDE.md)
 
 ---
 
-## 🚢 Production Deployment
+## 🔐 Security
 
-### Docker Compose (Single Server)
-```bash
-# Build production images
-docker-compose -f docker-compose.prod.yml build
+### Multi-Tenant Isolation
 
-# Start services
-docker-compose -f docker-compose.prod.yml up -d
+**Row-Level Security (RLS)** enforces tenant isolation at the database level:
 
-# Run migrations
-docker-compose -f docker-compose.prod.yml exec backend alembic upgrade head
-
-# View logs
-docker-compose -f docker-compose.prod.yml logs -f
+```sql
+-- Example: materials table RLS policy
+CREATE POLICY materials_tenant_isolation ON materials
+  USING (organization_id = current_setting('app.current_organization_id')::INTEGER);
 ```
 
-### Kubernetes (Scalable)
-See `docs/02-architecture/DEPLOYMENT.md` for Kubernetes manifests and Helm charts.
+All queries automatically filter by `organization_id` via application context.
+
+### Authentication & Authorization
+
+- **JWT Tokens**: Access token (30 min) + Refresh token (7 days)
+- **Automatic Refresh**: Frontend intercepts 401 and refreshes token
+- **Feature Gating**: `@require_tier()` and `@require_feature()` decorators
+- **Admin Access**: `@require_platform_admin` for platform admin endpoints
+
+### API Security
+
+- Rate limiting (100 requests/minute per IP)
+- CORS configuration for production domains
+- Stripe webhook signature verification
+- Internal API key for scheduled jobs
 
 ---
 
 ## 🐛 Troubleshooting
 
-### PostgreSQL Extensions Not Loading
-```bash
-# Check if extensions are loaded
-docker-compose exec postgres psql -U unison -d unison_erp -c "SELECT * FROM pg_available_extensions WHERE name IN ('pgmq', 'pg_cron', 'pg_search');"
+### Common Issues
 
-# Re-run initialization script
-docker-compose exec postgres psql -U unison -d unison_erp -f /docker-entrypoint-initdb.d/01-extensions.sql
-```
+#### Database Connection Errors
 
-### PGMQ Queue Not Processing
-```bash
-# Check queue metrics
-docker-compose exec postgres psql -U unison -d unison_erp -c "SELECT * FROM pgmq.metrics('background_jobs');"
-
-# Check worker logs
-docker-compose logs backend | grep "PGMQ Worker"
-```
-
-### pg_cron Jobs Not Running
-```bash
-# Check scheduled jobs
-docker-compose exec postgres psql -U unison -d unison_erp -c "SELECT * FROM cron.job;"
-
-# Check job execution history
-docker-compose exec postgres psql -U unison -d unison_erp -c "SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;"
-```
-
-### Database Connection Issues
 ```bash
 # Check PostgreSQL is running
-docker-compose ps postgres
+pg_isready -h localhost -p 5432
 
-# Check database logs
-docker-compose logs postgres
+# Verify connection string
+psql postgresql://user:password@localhost:5432/unison
 
-# Test connection
-docker-compose exec postgres psql -U unison -d unison_erp -c "SELECT version();"
+# Check RLS policies
+psql -d unison -c "\d+ materials"
+```
+
+#### Migration Errors
+
+```bash
+# Check current migration version
+alembic current
+
+# Rollback one migration
+alembic downgrade -1
+
+# Reset to specific version
+alembic downgrade <revision>
+
+# Re-run migrations
+alembic upgrade head
+```
+
+#### Stripe Webhook Issues
+
+```bash
+# Test webhook locally with Stripe CLI
+stripe listen --forward-to localhost:8000/api/v1/webhooks/stripe
+
+# Trigger test event
+stripe trigger checkout.session.completed
+
+# Check webhook signature
+# Ensure STRIPE_WEBHOOK_SECRET is correct in .env
+```
+
+#### Scheduled Jobs Not Running
+
+```bash
+# Check pg_cron is installed
+psql -d unison -c "SELECT * FROM cron.job;"
+
+# Check job logs
+psql -d unison -c "SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;"
+
+# Manually trigger job
+curl -X POST http://localhost:8000/api/v1/jobs/track-usage \
+  -H "X-API-Key: your-internal-api-key"
+
+# Check scheduled_job_logs table
+psql -d unison -c "SELECT * FROM scheduled_job_logs ORDER BY executed_at DESC LIMIT 10;"
 ```
 
 ---
 
-## 📈 Performance
+## 📊 Monitoring & Analytics
 
-### Benchmarks (MSME Scale: 100-500 users, 10K-100K records)
+### Platform Metrics
 
-| Operation | Traditional Stack | PostgreSQL-Native | Improvement |
-|-----------|-------------------|-------------------|-------------|
-| **Background Jobs** | Celery: 500 jobs/hr | PGMQ: 30K msgs/sec | 300x faster |
-| **Full-Text Search** | tsvector: 100ms | pg_search: 5ms | 20x faster |
-| **Analytics Queries** | Standard: 5s | pg_duckdb: 50ms | 100x faster |
-| **Cache Read** | Redis: <1ms | UNLOGGED: 1-2ms | Comparable |
-| **Container Count** | 8-10 | 3-4 | 60% reduction |
+Access admin analytics at: `/admin/analytics`
+
+**Available Metrics**:
+- **MRR/ARR**: Monthly and annual recurring revenue
+- **MRR Growth**: Historical trends with new/churned customers
+- **Trial Conversion**: Funnel analysis (trials → paid)
+- **Churn Analysis**: Customer and revenue churn rates
+- **Cohort Retention**: 6-month retention by signup cohort
+- **Revenue Forecast**: 6-month projection based on growth trends
+
+### Health Monitoring
+
+```bash
+# Application health
+curl http://localhost:8000/health
+
+# Database connectivity
+curl http://localhost:8000/ready
+
+# Liveness probe
+curl http://localhost:8000/live
+
+# Startup probe
+curl http://localhost:8000/startup
+```
 
 ---
 
 ## 🤝 Contributing
 
-1. Read [`docs/05-implementation/DEVELOPER_GUIDE.md`](./docs/05-implementation/DEVELOPER_GUIDE.md)
-2. Create feature branch: `git checkout -b feature/your-feature`
-3. Make changes following DDD patterns
-4. Write tests (unit + integration)
-5. Run tests: `pytest` and `npm test`
-6. Submit pull request
+### Development Workflow
+
+1. **Fork & Clone**: Fork the repo and clone your fork
+2. **Create Branch**: `git checkout -b feature/my-feature`
+3. **Follow Patterns**: Use existing DDD patterns (see `docs/05-implementation/DEVELOPER_GUIDE.md`)
+4. **Write Tests**: Add tests for new features
+5. **Run Tests**: `pytest` (backend) and `npm test` (frontend)
+6. **Commit**: Use conventional commits (e.g., `feat:`, `fix:`, `docs:`)
+7. **Push & PR**: Push to your fork and create pull request
+
+### Code Style
+
+- **Backend**: Black (formatting) + isort (imports) + flake8 (linting)
+- **Frontend**: ESLint + Prettier
+- **Commits**: Conventional commits (`feat:`, `fix:`, `docs:`, `refactor:`)
 
 ---
 
 ## 📄 License
 
-MIT License - See LICENSE file for details
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- **FastAPI**: Modern, fast web framework for Python
+- **React**: UI library for building component-based interfaces
+- **PostgreSQL**: World's most advanced open source database
+- **Stripe**: Payment infrastructure for the internet
+- **TimescaleDB**: Time-series database built on PostgreSQL
+- **shadcn/ui**: Beautifully designed component library
 
 ---
 
 ## 📞 Support
 
-- **Documentation Issues**: Create GitHub issue with `docs` label
-- **Bug Reports**: Create GitHub issue with `bug` label
-- **Feature Requests**: Create GitHub issue with `enhancement` label
-- **Architecture Questions**: Reference specific doc section in [`docs/`](./docs/)
+### For Customers
+- **Email**: support@unison.com
+- **Documentation**: [User Guide](USER_GUIDE.md)
+- **Billing Portal**: Accessible via app → Billing → Manage Payment Methods
+
+### For Developers
+- **GitHub Issues**: [github.com/kunwarVivek/mes/issues](https://github.com/kunwarVivek/mes/issues)
+- **Documentation**: [docs/README.md](docs/README.md)
+- **API Reference**: [API_REFERENCE.md](API_REFERENCE.md)
 
 ---
 
-**Built with PostgreSQL ❤️ for MSME Manufacturers**
+**Built with ❤️ for Manufacturing SMEs**
 
-**Version**: 2.0 (PostgreSQL-Native Architecture)
-**Last Updated**: 2025-11-07
+*Last Updated: 2025-11-11 | Version: 1.0.0 (Production Ready)*

@@ -52,6 +52,13 @@ class Settings(BaseSettings):
     EXCHANGE_RATE_API_KEY: str = ""
     EXCHANGE_RATE_API_URL: str = "https://api.exchangerate-api.com/v4/latest"
 
+    # Stripe Payment Configuration
+    STRIPE_SECRET_KEY: str = ""  # sk_test_... or sk_live_...
+    STRIPE_PUBLISHABLE_KEY: str = ""  # pk_test_... or pk_live_...
+    STRIPE_WEBHOOK_SECRET: str = ""  # whsec_...
+    STRIPE_CHECKOUT_SUCCESS_URL: str = "http://localhost:3000/billing/success"
+    STRIPE_CHECKOUT_CANCEL_URL: str = "http://localhost:3000/billing/cancel"
+
     # Row-Level Security (RLS) Configuration
     RLS_ENABLED: bool = True
     RLS_AUDIT_LOG_ENABLED: bool = True

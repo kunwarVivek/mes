@@ -219,3 +219,27 @@ class ConfigurationException(DomainException):
     def __init__(self, config_key: str, message: str, details: dict = None):
         super().__init__(f"Configuration error ({config_key}): {message}", details)
         self.config_key = config_key
+
+
+class ResourceNotFoundException(DomainException):
+    """
+    Raised when a requested resource cannot be found.
+
+    Similar to EntityNotFoundException but more generic.
+
+    HTTP Status: 404 Not Found
+    """
+
+    def __init__(self, message: str, details: dict = None):
+        super().__init__(message, details)
+
+
+class BusinessRuleException(DomainException):
+    """
+    Raised when a business rule is violated.
+
+    HTTP Status: 400 Bad Request
+    """
+
+    def __init__(self, message: str, details: dict = None):
+        super().__init__(message, details)

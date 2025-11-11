@@ -42,7 +42,7 @@ database/migrations/versions/
 
 backend/app/core/
   ├── extensions.py                         # Core module
-  ├── EXTENSIONS_README.md                  # Full docs
+  ├── EXTENSIONS_PYTHON_API.md              # Python API docs
   └── EXTENSIONS_QUICKREF.md                # This file
 
 backend/scripts/
@@ -53,6 +53,15 @@ backend/tests/
   └── integration/
       ├── test_extensions.py                # 8 integration tests
       └── test_migration_extensions.py      # 6 migration tests
+
+docs/03-postgresql/
+  ├── README.md                             # Index of all guides
+  ├── EXTENSIONS_OVERVIEW.md                # Installation & overview
+  ├── PGMQ_GUIDE.md                         # Message queue guide
+  ├── PG_CRON_GUIDE.md                      # Job scheduler guide
+  ├── PG_SEARCH_GUIDE.md                    # Full-text search guide
+  ├── TIMESCALEDB_GUIDE.md                  # Time-series guide
+  └── MIGRATION_GUIDE.md                    # Migration from Celery/Redis
 ```
 
 ## CLI Commands

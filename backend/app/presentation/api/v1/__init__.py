@@ -1,15 +1,35 @@
 from fastapi import APIRouter
-<<<<<<< Updated upstream
-from app.presentation.api.v1 import users, auth, materials, machines, quality, shifts, maintenance, organizations, plants, departments, projects, production_logs, lanes, bom, roles, custom_fields, workflows, logistics, reporting, project_management, traceability, branding, infrastructure, inventory, inventory_alerts, metrics, scheduling
-||||||| Stash base
-from app.presentation.api.v1 import users, auth, materials, machines, quality, shifts, maintenance, organizations, plants, departments, projects, production_logs, lanes, bom, metrics
-=======
-from app.presentation.api.v1 import users, auth, materials, machines, quality, shifts, maintenance, organizations, plants, departments, projects, production_logs, lanes, bom, metrics, onboarding
->>>>>>> Stashed changes
+from app.presentation.api.v1 import (
+    users, auth, materials, machines, quality, shifts, maintenance,
+    organizations, plants, departments, projects, production_logs, lanes, bom,
+    roles, custom_fields, workflows, logistics, reporting, project_management,
+    traceability, branding, infrastructure, inventory, inventory_alerts, metrics,
+    scheduling, onboarding, health, billing, subscription, webhooks, platform_admin,
+    jobs, analytics
+)
 
 api_router = APIRouter()
+
+# Health Check Endpoints (no prefix - accessible at /api/v1/health)
+api_router.include_router(health.router)
+
+# Authentication & Onboarding
 api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
 api_router.include_router(onboarding.router, prefix="/onboarding", tags=["onboarding"])
+
+# Subscription & Billing
+api_router.include_router(subscription.router, tags=["subscription"])
+api_router.include_router(billing.router, tags=["billing"])
+api_router.include_router(webhooks.router, tags=["webhooks"])
+
+# Platform Admin (requires superuser access)
+api_router.include_router(platform_admin.router, tags=["platform-admin"])
+
+# Scheduled Jobs (internal API only)
+api_router.include_router(jobs.router, tags=["jobs"])
+
+# Analytics (admin only)
+api_router.include_router(analytics.router, tags=["analytics"])
 api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(roles.router, prefix="/roles", tags=["rbac"])
 api_router.include_router(custom_fields.router, tags=["configuration"])
