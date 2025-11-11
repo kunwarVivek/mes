@@ -131,6 +131,12 @@ from app.models.infrastructure import (
     SyncDirection,
     SyncStatus
 )
+from app.models.subscription import (
+    SubscriptionModel,
+    SubscriptionUsageModel,
+    InvoiceModel,
+    SubscriptionAddOnModel
+)
 
 __all__ = [
     "User",
@@ -245,5 +251,9 @@ __all__ = [
     "SettingType",
     "StorageProvider",
     "SyncDirection",
-    "SyncStatus"
+    "SyncStatus",
+    "SubscriptionModel",
+    "SubscriptionUsageModel",
+    "InvoiceModel",
+    "SubscriptionAddOnModel"
 ]
