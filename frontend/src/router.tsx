@@ -22,6 +22,10 @@ import { productionRoute } from './routes/production'
 import { productionPlansRoute } from './routes/production-plans'
 import { mrpRoute } from './routes/mrp'
 import { schedulingRoute } from './routes/scheduling'
+import { adminDashboardRoute } from './routes/admin'
+import { adminOrganizationsRoute } from './routes/admin-organizations'
+import { adminOrganizationDetailRoute } from './routes/admin-organization-detail'
+import { billingRoute } from './routes/billing'
 
 /**
  * TanStack Router Configuration
@@ -59,6 +63,10 @@ import { schedulingRoute } from './routes/scheduling'
  *     - /production-plans (production planning)
  *     - /mrp (material requirements planning)
  *     - /scheduling (visual Gantt scheduling)
+ *     - /billing (subscription management and invoices)
+ *     - /admin/dashboard (platform admin dashboard - requires superuser)
+ *     - /admin/organizations (list all organizations - requires superuser)
+ *     - /admin/organizations/:orgId (organization details - requires superuser)
  */
 
 // Build route tree with authenticated layout
@@ -89,6 +97,12 @@ const routeTree = rootRoute.addChildren([
     productionPlansRoute,
     mrpRoute,
     schedulingRoute,
+    // Billing route
+    billingRoute,
+    // Admin routes
+    adminDashboardRoute,
+    adminOrganizationsRoute,
+    adminOrganizationDetailRoute,
   ]),
 ])
 
