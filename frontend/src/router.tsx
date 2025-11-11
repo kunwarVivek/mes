@@ -25,6 +25,7 @@ import { schedulingRoute } from './routes/scheduling'
 import { adminDashboardRoute } from './routes/admin'
 import { adminOrganizationsRoute } from './routes/admin-organizations'
 import { adminOrganizationDetailRoute } from './routes/admin-organization-detail'
+import { adminAnalyticsRoute } from './routes/admin-analytics'
 import { billingRoute } from './routes/billing'
 
 /**
@@ -67,6 +68,7 @@ import { billingRoute } from './routes/billing'
  *     - /admin/dashboard (platform admin dashboard - requires superuser)
  *     - /admin/organizations (list all organizations - requires superuser)
  *     - /admin/organizations/:orgId (organization details - requires superuser)
+ *     - /admin/analytics (revenue analytics and BI - requires superuser)
  */
 
 // Build route tree with authenticated layout
@@ -103,6 +105,7 @@ const routeTree = rootRoute.addChildren([
     adminDashboardRoute,
     adminOrganizationsRoute,
     adminOrganizationDetailRoute,
+    adminAnalyticsRoute,
   ]),
 ])
 

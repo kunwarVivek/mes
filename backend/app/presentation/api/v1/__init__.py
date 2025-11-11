@@ -5,7 +5,7 @@ from app.presentation.api.v1 import (
     roles, custom_fields, workflows, logistics, reporting, project_management,
     traceability, branding, infrastructure, inventory, inventory_alerts, metrics,
     scheduling, onboarding, health, billing, subscription, webhooks, platform_admin,
-    jobs
+    jobs, analytics
 )
 
 api_router = APIRouter()
@@ -27,6 +27,9 @@ api_router.include_router(platform_admin.router, tags=["platform-admin"])
 
 # Scheduled Jobs (internal API only)
 api_router.include_router(jobs.router, tags=["jobs"])
+
+# Analytics (admin only)
+api_router.include_router(analytics.router, tags=["analytics"])
 api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(roles.router, prefix="/roles", tags=["rbac"])
 api_router.include_router(custom_fields.router, tags=["configuration"])
