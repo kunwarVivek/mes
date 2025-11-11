@@ -37,6 +37,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
         "/redoc",
     }
 
+    # Webhook endpoints (verify their own signatures)
+    WEBHOOK_PATHS = {
+        "/api/v1/webhooks/stripe",
+    }
+
     def __init__(self, app):
         super().__init__(app)
         self.jwt_handler = JWTHandler()
@@ -45,6 +50,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
         """Check if path is public and doesn't require authentication"""
         # Exact match
         if path in self.PUBLIC_PATHS:
+            return True
+
+        # Webhook endpoints (verify their own signatures)
+        if path in self.WEBHOOK_PATHS:
             return True
 
         # Auth endpoints (login, register, etc.)

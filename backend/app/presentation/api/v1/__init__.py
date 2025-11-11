@@ -4,7 +4,7 @@ from app.presentation.api.v1 import (
     organizations, plants, departments, projects, production_logs, lanes, bom,
     roles, custom_fields, workflows, logistics, reporting, project_management,
     traceability, branding, infrastructure, inventory, inventory_alerts, metrics,
-    scheduling, onboarding, health
+    scheduling, onboarding, health, billing, subscription, webhooks
 )
 
 api_router = APIRouter()
@@ -15,6 +15,11 @@ api_router.include_router(health.router)
 # Authentication & Onboarding
 api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
 api_router.include_router(onboarding.router, prefix="/onboarding", tags=["onboarding"])
+
+# Subscription & Billing
+api_router.include_router(subscription.router, tags=["subscription"])
+api_router.include_router(billing.router, tags=["billing"])
+api_router.include_router(webhooks.router, tags=["webhooks"])
 api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(roles.router, prefix="/roles", tags=["rbac"])
 api_router.include_router(custom_fields.router, tags=["configuration"])
