@@ -5,7 +5,7 @@
  */
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -25,6 +25,7 @@ import {
 import { useNCRMutations } from '../hooks/useNCRMutations'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
+import { NCRPhotoCapture } from '@/components/NCRPhotoCapture'
 
 export interface NCRFormProps {
   onSuccess?: () => void
@@ -41,6 +42,7 @@ const defectTypeOptions: { value: DefectType; label: string }[] = [
 export function NCRForm({ onSuccess }: NCRFormProps) {
   const { createNCR } = useNCRMutations()
   const { user } = useAuthStore()
+  const [photos, setPhotos] = useState<File[]>([])
 
   const form = useForm<CreateNCRFormData>({
     resolver: zodResolver(createNCRSchema),
@@ -218,6 +220,18 @@ export function NCRForm({ onSuccess }: NCRFormProps) {
             <p className="text-sm text-destructive">{errors.quantity_defective.message}</p>
           )}
         </div>
+      </div>
+
+      {/* Photo Evidence */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Photo Evidence (Optional)</h3>
+        <p className="text-sm text-muted-foreground">
+          Capture up to 3 photos to document the defect
+        </p>
+        <NCRPhotoCapture
+          onPhotosChange={(newPhotos) => setPhotos(newPhotos)}
+          maxPhotos={3}
+        />
       </div>
 
       {/* Reporter Information */}
