@@ -352,3 +352,92 @@ class GenealogyTreeResponse(BaseModel):
     root: GenealogyTreeNode
     total_nodes: int
     max_depth_reached: int
+
+
+# ========== Recall Report DTOs ==========
+
+class RecallReportRequest(BaseModel):
+    """DTO for creating a recall report"""
+    material_id: int = Field(..., gt=0, description="Material ID")
+    lot_numbers: List[str] = Field(..., min_length=1, description="List of lot numbers to recall")
+    reason: str = Field(..., min_length=1, max_length=500, description="Reason for recall")
+    severity: str = Field(..., description="Severity level")
+    include_customer_details: bool = Field(default=True, description="Include customer contact details")
+    include_distribution_chain: bool = Field(default=True, description="Include full distribution chain")
+
+    @field_validator('severity')
+    @classmethod
+    def validate_severity(cls, v):
+        valid_severities = ['HIGH', 'MEDIUM', 'LOW']
+        if v not in valid_severities:
+            raise ValueError(f'severity must be one of {valid_severities}')
+        return v
+
+
+class AffectedWorkOrderDTO(BaseModel):
+    """DTO for affected work orders in recall report"""
+    work_order_id: int
+    work_order_number: str
+    quantity_consumed: Decimal
+    status: str
+    completion_date: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+
+class AffectedShipmentDTO(BaseModel):
+    """DTO for affected shipments in recall report"""
+    shipment_id: int
+    shipment_number: str
+    customer_name: Optional[str]
+    customer_email: Optional[str]
+    shipped_date: Optional[datetime]
+    quantity: Decimal
+    serial_numbers: List[str]
+
+    class Config:
+        from_attributes = True
+
+
+class AffectedCustomerDTO(BaseModel):
+    """DTO for affected customers in recall report"""
+    customer_name: str
+    customer_email: Optional[str]
+    total_quantity: Decimal
+    shipment_count: int
+
+    class Config:
+        from_attributes = True
+
+
+class DownstreamImpactDTO(BaseModel):
+    """DTO for downstream impact summary"""
+    total_affected_work_orders: int
+    total_affected_shipments: int
+    total_affected_customers: int
+    total_quantity_shipped: Decimal
+
+    class Config:
+        from_attributes = True
+
+
+class RecallReportResponse(BaseModel):
+    """DTO for recall report response"""
+    report_id: str
+    material_id: int
+    material_number: str
+    material_description: str
+    affected_lots: List[str]
+    reason: str
+    severity: str
+    generated_at: datetime
+    generated_by_user_id: int
+    total_quantity_affected: Decimal
+    affected_work_orders: List[AffectedWorkOrderDTO]
+    affected_shipments: List[AffectedShipmentDTO]
+    affected_customers: List[AffectedCustomerDTO]
+    downstream_impact: DownstreamImpactDTO
+
+    class Config:
+        from_attributes = True

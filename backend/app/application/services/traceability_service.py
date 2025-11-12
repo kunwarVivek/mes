@@ -3,8 +3,10 @@ Traceability Service - Business logic for lot/serial tracking and genealogy
 """
 from typing import List, Optional, Dict, Set
 from sqlalchemy.orm import Session
+from sqlalchemy import and_, or_, func
 from datetime import datetime, timezone
 from decimal import Decimal
+import logging
 
 from app.models.traceability import (
     LotBatch,
@@ -12,6 +14,9 @@ from app.models.traceability import (
     TraceabilityLink,
     GenealogyRecord
 )
+from app.models.work_order import WorkOrder
+from app.models.material import Material
+from app.models.logistics import Shipment, ShipmentItem
 from app.infrastructure.repositories.traceability_repository import (
     LotBatchRepository,
     SerialNumberRepository,
@@ -33,7 +38,15 @@ from app.application.dtos.traceability_dto import (
     WhereFromRequest,
     GenealogyTreeNode,
     GenealogyTreeResponse,
+    RecallReportRequest,
+    RecallReportResponse,
+    AffectedWorkOrderDTO,
+    AffectedShipmentDTO,
+    AffectedCustomerDTO,
+    DownstreamImpactDTO,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class LotBatchService:
@@ -513,3 +526,307 @@ class GenealogyService:
             return node.depth
 
         return max(self._get_max_depth(child) for child in node.children)
+
+
+class RecallReportService:
+    """Service for Recall Report generation"""
+
+    def __init__(self, db: Session):
+        self.db = db
+        self.lot_repo = LotBatchRepository(db)
+        self.link_repo = TraceabilityLinkRepository(db)
+        self.serial_repo = SerialNumberRepository(db)
+
+    def generate_recall_report(
+        self,
+        request: RecallReportRequest,
+        user_id: int,
+        organization_id: int
+    ) -> RecallReportResponse:
+        """
+        Generate a comprehensive recall report for affected lots.
+
+        Performs forward genealogy trace: Lot → Work Orders → Shipments → Customers
+
+        Args:
+            request: Recall report request with material_id, lot_numbers, reason, severity
+            user_id: User ID generating the report
+            organization_id: Organization ID for multi-tenant isolation
+
+        Returns:
+            RecallReportResponse with complete traceability data
+
+        Raises:
+            ValueError: If material or lot numbers are invalid
+        """
+        logger.info(f"Generating recall report for material_id={request.material_id}, lots={request.lot_numbers}")
+
+        # Step 1: Validate inputs
+        material = self._validate_material(request.material_id, organization_id)
+        lot_batches = self._validate_lots(request.lot_numbers, request.material_id, organization_id)
+
+        # Step 2: Generate report ID
+        report_id = self._generate_report_id()
+
+        # Step 3: Calculate total quantity affected
+        total_quantity_affected = sum(
+            Decimal(str(lot.initial_quantity)) for lot in lot_batches
+        )
+
+        # Step 4: Forward Genealogy Trace - Find affected work orders
+        affected_work_orders = self._trace_affected_work_orders(lot_batches)
+
+        # Step 5: Find affected shipments and customers
+        affected_shipments, affected_customers = self._trace_affected_shipments(
+            lot_batches,
+            affected_work_orders,
+            request.include_customer_details
+        )
+
+        # Step 6: Build downstream impact summary
+        downstream_impact = DownstreamImpactDTO(
+            total_affected_work_orders=len(affected_work_orders),
+            total_affected_shipments=len(affected_shipments),
+            total_affected_customers=len(affected_customers),
+            total_quantity_shipped=sum(s.quantity for s in affected_shipments)
+        )
+
+        # Step 7: Build and return report
+        report = RecallReportResponse(
+            report_id=report_id,
+            material_id=material.id,
+            material_number=material.material_number,
+            material_description=material.description or material.material_name,
+            affected_lots=request.lot_numbers,
+            reason=request.reason,
+            severity=request.severity,
+            generated_at=datetime.now(timezone.utc),
+            generated_by_user_id=user_id,
+            total_quantity_affected=total_quantity_affected,
+            affected_work_orders=affected_work_orders,
+            affected_shipments=affected_shipments,
+            affected_customers=affected_customers,
+            downstream_impact=downstream_impact
+        )
+
+        logger.info(
+            f"Recall report {report_id} generated: "
+            f"{len(affected_work_orders)} WOs, "
+            f"{len(affected_shipments)} shipments, "
+            f"{len(affected_customers)} customers"
+        )
+
+        return report
+
+    def _validate_material(self, material_id: int, organization_id: int) -> Material:
+        """Validate material exists and belongs to organization"""
+        material = self.db.query(Material).filter(
+            and_(
+                Material.id == material_id,
+                Material.organization_id == organization_id
+            )
+        ).first()
+
+        if not material:
+            raise ValueError(f"Material {material_id} not found")
+
+        return material
+
+    def _validate_lots(
+        self,
+        lot_numbers: List[str],
+        material_id: int,
+        organization_id: int
+    ) -> List[LotBatch]:
+        """Validate all lot numbers exist and belong to the material"""
+        lot_batches = []
+
+        for lot_number in lot_numbers:
+            lot = self.lot_repo.get_by_lot_number(organization_id, lot_number)
+
+            if not lot:
+                raise ValueError(f"Lot '{lot_number}' not found")
+
+            if lot.material_id != material_id:
+                raise ValueError(
+                    f"Lot '{lot_number}' does not belong to material {material_id}"
+                )
+
+            lot_batches.append(lot)
+
+        return lot_batches
+
+    def _generate_report_id(self) -> str:
+        """Generate unique report ID in format RECALL-YYYY-NNNN"""
+        current_year = datetime.now(timezone.utc).year
+
+        # Simple sequence generation - in production, use database sequence
+        # For now, use timestamp-based unique ID
+        timestamp = int(datetime.now(timezone.utc).timestamp() * 1000) % 10000
+
+        return f"RECALL-{current_year}-{timestamp:04d}"
+
+    def _trace_affected_work_orders(
+        self,
+        lot_batches: List[LotBatch]
+    ) -> List[AffectedWorkOrderDTO]:
+        """
+        Trace which work orders consumed the affected lots.
+
+        Uses traceability_links table to find work orders that consumed these lots.
+        """
+        lot_ids = [lot.id for lot in lot_batches]
+
+        # Query traceability links to find work orders that consumed these lots
+        # Parent lot = affected lot, Child = produced lot/serial
+        links = self.db.query(TraceabilityLink).filter(
+            and_(
+                TraceabilityLink.parent_lot_id.in_(lot_ids),
+                TraceabilityLink.work_order_id.isnot(None)
+            )
+        ).all()
+
+        # Get unique work order IDs
+        work_order_ids = list(set(link.work_order_id for link in links if link.work_order_id))
+
+        if not work_order_ids:
+            logger.info("No work orders found that consumed the affected lots")
+            return []
+
+        # Query work orders with details
+        work_orders = self.db.query(WorkOrder).filter(
+            WorkOrder.id.in_(work_order_ids)
+        ).all()
+
+        # Build affected work orders list
+        affected_wos = []
+        for wo in work_orders:
+            # Calculate total quantity consumed from affected lots
+            consumed_qty = sum(
+                Decimal(str(link.quantity_used or 0))
+                for link in links
+                if link.work_order_id == wo.id
+            )
+
+            affected_wos.append(AffectedWorkOrderDTO(
+                work_order_id=wo.id,
+                work_order_number=wo.work_order_number,
+                quantity_consumed=consumed_qty,
+                status=wo.order_status.value if hasattr(wo.order_status, 'value') else str(wo.order_status),
+                completion_date=wo.end_date_actual
+            ))
+
+        return affected_wos
+
+    def _trace_affected_shipments(
+        self,
+        lot_batches: List[LotBatch],
+        affected_work_orders: List[AffectedWorkOrderDTO],
+        include_customer_details: bool
+    ) -> tuple[List[AffectedShipmentDTO], List[AffectedCustomerDTO]]:
+        """
+        Trace affected shipments and customers.
+
+        Logic:
+        1. Find serial numbers produced from affected lots or work orders
+        2. Find shipments containing these serial numbers
+        3. Aggregate customer information
+        """
+        lot_ids = [lot.id for lot in lot_batches]
+        wo_ids = [wo.work_order_id for wo in affected_work_orders]
+
+        # Find serial numbers linked to affected lots or work orders
+        serial_numbers_query = self.db.query(SerialNumber).filter(
+            or_(
+                SerialNumber.lot_batch_id.in_(lot_ids),
+                SerialNumber.work_order_id.in_(wo_ids)
+            )
+        )
+
+        # Filter to shipped serial numbers
+        serial_numbers = serial_numbers_query.filter(
+            SerialNumber.status == 'SHIPPED'
+        ).all()
+
+        if not serial_numbers:
+            logger.info("No shipped serial numbers found for affected lots/work orders")
+            return [], []
+
+        # Get shipment IDs from serial numbers
+        shipment_ids = list(set(
+            sn.shipment_id for sn in serial_numbers
+            if sn.shipment_id is not None
+        ))
+
+        if not shipment_ids:
+            logger.info("No shipments found for affected serial numbers")
+            return [], []
+
+        # Query shipments
+        shipments = self.db.query(Shipment).filter(
+            Shipment.id.in_(shipment_ids)
+        ).all()
+
+        # Build affected shipments list
+        affected_shipments = []
+        customer_data = {}  # For aggregating customer information
+
+        for shipment in shipments:
+            # Find serial numbers in this shipment
+            shipment_serials = [
+                sn for sn in serial_numbers
+                if sn.shipment_id == shipment.id
+            ]
+
+            serial_nums = [sn.serial_number for sn in shipment_serials]
+            quantity = Decimal(len(serial_nums))
+
+            # Extract customer info from serial numbers or shipment metadata
+            # Since we don't have a Customer table, use metadata from serial numbers
+            customer_name = None
+            customer_email = None
+
+            if shipment_serials and include_customer_details:
+                # Try to get customer info from first serial number's custom_attributes
+                first_serial = shipment_serials[0]
+                if first_serial.custom_attributes:
+                    customer_name = first_serial.custom_attributes.get('customer_name')
+                    customer_email = first_serial.custom_attributes.get('customer_email')
+
+                # Fallback: use shipment destination as customer name
+                if not customer_name and shipment.destination_location:
+                    customer_name = shipment.destination_location
+
+            affected_shipments.append(AffectedShipmentDTO(
+                shipment_id=shipment.id,
+                shipment_number=shipment.shipment_number,
+                customer_name=customer_name,
+                customer_email=customer_email,
+                shipped_date=shipment.actual_ship_date,
+                quantity=quantity,
+                serial_numbers=serial_nums
+            ))
+
+            # Aggregate customer data
+            if customer_name:
+                if customer_name not in customer_data:
+                    customer_data[customer_name] = {
+                        'email': customer_email,
+                        'total_quantity': Decimal(0),
+                        'shipment_count': 0
+                    }
+                customer_data[customer_name]['total_quantity'] += quantity
+                customer_data[customer_name]['shipment_count'] += 1
+
+        # Build affected customers list
+        affected_customers = [
+            AffectedCustomerDTO(
+                customer_name=name,
+                customer_email=data['email'],
+                total_quantity=data['total_quantity'],
+                shipment_count=data['shipment_count']
+            )
+            for name, data in customer_data.items()
+        ]
+
+        return affected_shipments, affected_customers

@@ -506,7 +506,7 @@ class LogisticsService:
 
         logger.info(
             f"Recorded scan {scan.id}: {resolution_status} "
-            f"({entity_type}/{entity_id} if resolved else 'N/A'})"
+            f"({entity_type}/{entity_id if resolved else 'N/A'})"
         )
 
         return {

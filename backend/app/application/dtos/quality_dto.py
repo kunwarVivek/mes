@@ -189,3 +189,40 @@ class FPYMetricsDTO(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class DispositionTypeDTO(str, Enum):
+    """NCR disposition type enumeration"""
+    REWORK = "REWORK"
+    SCRAP = "SCRAP"
+    USE_AS_IS = "USE_AS_IS"
+    RETURN_TO_SUPPLIER = "RETURN_TO_SUPPLIER"
+
+
+class NCRDispositionDTO(BaseModel):
+    """DTO for NCR disposition request"""
+    disposition_type: DispositionTypeDTO
+    root_cause: Optional[str] = Field(None, max_length=1000)
+    notes: Optional[str] = Field(None, max_length=1000)
+
+    class Config:
+        from_attributes = True
+
+
+class NCRDispositionResponseDTO(BaseModel):
+    """DTO for NCR disposition response"""
+    ncr_id: int
+    ncr_number: str
+    disposition_type: str
+    disposition_date: datetime
+    disposition_by_user_id: int
+    actions_taken: List[str]
+    rework_work_order_id: Optional[int] = None
+    rework_cost: Optional[float] = None
+    scrap_cost: Optional[float] = None
+    inventory_adjusted: Optional[bool] = None
+    customer_notified: Optional[bool] = None
+    return_shipment_created: Optional[bool] = None
+
+    class Config:
+        from_attributes = True

@@ -367,3 +367,102 @@ class MachineRepository:
                 total_downtime_minutes += duration
 
         return total_downtime_minutes
+
+    def calculate_utilization(
+        self,
+        machine_id: int,
+        start_date: datetime,
+        end_date: datetime
+    ) -> dict:
+        """
+        Calculate machine utilization metrics for a time period.
+
+        Calculates:
+        - Total running hours (RUNNING status)
+        - Total downtime hours (DOWN + MAINTENANCE)
+        - Utilization percentage
+        - OEE Availability
+
+        Args:
+            machine_id: Machine ID
+            start_date: Start of time period
+            end_date: End of time period
+
+        Returns:
+            Dictionary with utilization metrics
+        """
+        logger.info(f"Calculating utilization for machine {machine_id} from {start_date} to {end_date}")
+
+        # Get all status history records that overlap with the time period
+        history_records = (
+            self._db.query(MachineStatusHistory)
+            .filter(MachineStatusHistory.machine_id == machine_id)
+            .filter(
+                and_(
+                    MachineStatusHistory.started_at < end_date,
+                    func.coalesce(MachineStatusHistory.ended_at, end_date) > start_date
+                )
+            )
+            .all()
+        )
+
+        # Calculate total time in each status
+        total_running_seconds = 0.0
+        total_downtime_seconds = 0.0
+        total_maintenance_seconds = 0.0
+
+        for record in history_records:
+            # Calculate overlap with requested time period
+            period_start = max(record.started_at, start_date)
+            period_end = min(record.ended_at or end_date, end_date)
+
+            if period_end > period_start:
+                duration_seconds = (period_end - period_start).total_seconds()
+
+                if record.status == MachineStatus.RUNNING:
+                    total_running_seconds += duration_seconds
+                elif record.status == MachineStatus.DOWN:
+                    total_downtime_seconds += duration_seconds
+                elif record.status == MachineStatus.MAINTENANCE:
+                    total_maintenance_seconds += duration_seconds
+
+        # Calculate total period in seconds
+        total_period_seconds = (end_date - start_date).total_seconds()
+
+        # Convert to hours
+        total_period_hours = total_period_seconds / 3600.0
+        total_running_hours = total_running_seconds / 3600.0
+        total_downtime_hours = (total_downtime_seconds + total_maintenance_seconds) / 3600.0
+
+        # Calculate utilization percentage
+        utilization_percent = (total_running_hours / total_period_hours * 100.0) if total_period_hours > 0 else 0.0
+
+        # Calculate OEE Availability
+        # OEE Availability = (Planned Production Time - Unplanned Downtime) / Planned Production Time × 100
+        # For simplicity, we consider:
+        # - Planned production time = total period - scheduled maintenance
+        # - Unplanned downtime = time in DOWN status
+        planned_production_time_hours = total_period_hours - (total_maintenance_seconds / 3600.0)
+        unplanned_downtime_hours = total_downtime_seconds / 3600.0
+
+        if planned_production_time_hours > 0:
+            oee_availability = ((planned_production_time_hours - unplanned_downtime_hours) / planned_production_time_hours) * 100.0
+            # Ensure it's within 0-100 range
+            oee_availability = max(0.0, min(100.0, oee_availability))
+        else:
+            oee_availability = 0.0
+
+        logger.info(
+            f"Utilization calculated - Running: {total_running_hours:.2f}h, "
+            f"Downtime: {total_downtime_hours:.2f}h, "
+            f"Utilization: {utilization_percent:.2f}%, "
+            f"OEE Availability: {oee_availability:.2f}%"
+        )
+
+        return {
+            "total_available_hours": total_period_hours,
+            "total_running_hours": total_running_hours,
+            "total_downtime_hours": total_downtime_hours,
+            "utilization_percent": utilization_percent,
+            "oee_availability": oee_availability
+        }

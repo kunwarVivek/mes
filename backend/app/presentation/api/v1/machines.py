@@ -7,6 +7,7 @@ Endpoints:
 - GET /machines/{id}: Get machine by ID
 - PATCH /machines/{id}/status: Update machine status
 - GET /machines/{id}/oee: Calculate OEE metrics
+- GET /machines/{id}/utilization: Get machine utilization metrics
 """
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -23,7 +24,8 @@ from app.application.dtos.machine_dto import (
     MachineStatusUpdateResponseDTO,
     MachineStatusHistoryResponseDTO,
     OEEMetricsDTO,
-    OEECalculationRequestDTO
+    OEECalculationRequestDTO,
+    MachineUtilizationDTO
 )
 from app.domain.entities.machine import OEECalculator
 
@@ -297,3 +299,69 @@ def calculate_machine_oee(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+
+
+@router.get(
+    "/{machine_id}/utilization",
+    response_model=MachineUtilizationDTO,
+    summary="Get machine utilization metrics",
+    description="Calculate machine utilization and OEE availability for a time period"
+)
+def get_machine_utilization(
+    machine_id: int,
+    start_date: datetime = Query(..., description="Start of time period"),
+    end_date: datetime = Query(..., description="End of time period"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get machine utilization metrics for a time period.
+
+    Calculates:
+    - Utilization percentage: (Running time / Total time) × 100
+    - Total running hours: Time machine spent in RUNNING status
+    - Total downtime hours: Time machine spent in DOWN or MAINTENANCE status
+    - OEE Availability: (Planned time - Unplanned downtime) / Planned time × 100
+
+    Returns comprehensive utilization metrics including OEE availability.
+    OEE performance and quality are null as they require additional production data.
+    """
+    repository = MachineRepository(db)
+
+    # Verify machine exists
+    db_machine = repository.get_by_id(machine_id)
+    if not db_machine:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Machine with id {machine_id} not found"
+        )
+
+    # Validate date range
+    if end_date <= start_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="end_date must be after start_date"
+        )
+
+    # Calculate utilization metrics
+    utilization_metrics = repository.calculate_utilization(
+        machine_id=machine_id,
+        start_date=start_date,
+        end_date=end_date
+    )
+
+    # Build response DTO
+    return MachineUtilizationDTO(
+        machine_id=db_machine.id,
+        machine_code=db_machine.machine_code,
+        period_start=start_date,
+        period_end=end_date,
+        utilization_percent=round(utilization_metrics["utilization_percent"], 2),
+        total_available_hours=round(utilization_metrics["total_available_hours"], 2),
+        total_running_hours=round(utilization_metrics["total_running_hours"], 2),
+        total_downtime_hours=round(utilization_metrics["total_downtime_hours"], 2),
+        oee_availability=round(utilization_metrics["oee_availability"], 2),
+        oee_performance=None,  # Requires ideal_cycle_time and production data
+        oee_quality=None,  # Requires good_units/total_units from quality system
+        oee_overall=None,  # Product of availability × performance × quality
+        capacity_units_per_hour=db_machine.capacity_units_per_hour
+    )

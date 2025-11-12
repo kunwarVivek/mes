@@ -424,3 +424,304 @@ class FPYResponse(BaseModel):
     period_end: datetime
     breakdown_by_plan: Optional[Dict[str, Any]] = None
     breakdown_by_material: Optional[Dict[str, Any]] = None
+
+
+# ========== Nested Inspection Plan DTOs ==========
+
+class NestedCharacteristicCreateDTO(BaseModel):
+    """DTO for creating characteristic within a point"""
+    characteristic_code: str = Field(..., min_length=1, max_length=100)
+    characteristic_name: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = None
+    characteristic_type: str = Field(..., description="VARIABLE or ATTRIBUTE")
+    data_type: str = Field(..., description="NUMERIC, BOOLEAN, or TEXT")
+    unit_of_measure: Optional[str] = Field(None, max_length=50)
+    target_value: Optional[Decimal] = None
+    lower_spec_limit: Optional[Decimal] = Field(None, description="LSL")
+    upper_spec_limit: Optional[Decimal] = Field(None, description="USL")
+    lower_control_limit: Optional[Decimal] = Field(None, description="LCL")
+    upper_control_limit: Optional[Decimal] = Field(None, description="UCL")
+    track_spc: bool = Field(default=False)
+    control_chart_type: Optional[str] = None
+    subgroup_size: Optional[int] = Field(None, gt=0)
+    allowed_values: Optional[List[str]] = None
+    tolerance_type: Optional[str] = None
+    tolerance: Optional[Decimal] = None
+    sequence: int = Field(default=0, ge=0)
+
+    @field_validator('characteristic_type')
+    @classmethod
+    def validate_characteristic_type(cls, v):
+        valid_types = ['VARIABLE', 'ATTRIBUTE']
+        if v not in valid_types:
+            raise ValueError(f'characteristic_type must be one of {valid_types}')
+        return v
+
+    @field_validator('data_type')
+    @classmethod
+    def validate_data_type(cls, v):
+        valid_types = ['NUMERIC', 'BOOLEAN', 'TEXT']
+        if v not in valid_types:
+            raise ValueError(f'data_type must be one of {valid_types}')
+        return v
+
+
+class NestedPointCreateDTO(BaseModel):
+    """DTO for creating inspection point within a plan"""
+    point_code: str = Field(..., min_length=1, max_length=100)
+    point_name: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = None
+    inspection_method: Optional[str] = Field(None, max_length=100)
+    inspection_equipment: Optional[str] = Field(None, max_length=200)
+    sequence: int = Field(default=0, ge=0)
+    is_mandatory: bool = Field(default=True)
+    is_critical: bool = Field(default=False)
+    inspection_instructions: Optional[str] = None
+    acceptance_criteria: Optional[str] = None
+    characteristics: List[NestedCharacteristicCreateDTO] = Field(default_factory=list)
+
+
+class NestedInspectionPlanCreateDTO(BaseModel):
+    """DTO for creating inspection plan with nested points and characteristics"""
+    name: str = Field(..., min_length=1, max_length=200, description="Plan name")
+    description: Optional[str] = Field(None, description="Plan description")
+    plan_type: str = Field(..., description="INCOMING, IN_PROCESS, FINAL, FIRST_ARTICLE, or AUDIT")
+    applies_to: str = Field(..., description="WORK_ORDER, MATERIAL, PRODUCT, or PROCESS")
+    material_id: Optional[int] = Field(None, gt=0)
+    work_center_id: Optional[int] = Field(None, gt=0)
+    frequency: str = Field(default="ON_DEMAND", description="Inspection frequency")
+    frequency_value: Optional[int] = Field(None, gt=0)
+    sample_size: Optional[int] = Field(None, gt=0)
+    spc_enabled: bool = Field(default=False)
+    control_limits_config: Optional[Dict[str, Any]] = None
+    effective_date: Optional[date] = None
+    expiry_date: Optional[date] = None
+    instructions: Optional[str] = None
+    acceptance_criteria: Optional[str] = None
+    inspection_points: List[NestedPointCreateDTO] = Field(default_factory=list)
+
+    @field_validator('plan_type')
+    @classmethod
+    def validate_plan_type(cls, v):
+        valid_types = ['INCOMING', 'IN_PROCESS', 'FINAL', 'FIRST_ARTICLE', 'AUDIT']
+        if v not in valid_types:
+            raise ValueError(f'plan_type must be one of {valid_types}')
+        return v
+
+    @field_validator('applies_to')
+    @classmethod
+    def validate_applies_to(cls, v):
+        valid_values = ['MATERIAL', 'WORK_ORDER', 'PRODUCT', 'PROCESS']
+        if v not in valid_values:
+            raise ValueError(f'applies_to must be one of {valid_values}')
+        return v
+
+    @field_validator('frequency')
+    @classmethod
+    def validate_frequency(cls, v):
+        valid_frequencies = ['EVERY_UNIT', 'HOURLY', 'DAILY', 'WEEKLY', 'PERIODIC', 'ON_DEMAND']
+        if v not in valid_frequencies:
+            raise ValueError(f'frequency must be one of {valid_frequencies}')
+        return v
+
+
+class NestedCharacteristicResponse(BaseModel):
+    """Response DTO for characteristic"""
+    id: int
+    characteristic_code: str
+    characteristic_name: str
+    description: Optional[str]
+    characteristic_type: str
+    data_type: str
+    unit_of_measure: Optional[str]
+    target_value: Optional[Decimal]
+    lower_spec_limit: Optional[Decimal]
+    upper_spec_limit: Optional[Decimal]
+    lower_control_limit: Optional[Decimal]
+    upper_control_limit: Optional[Decimal]
+    track_spc: bool
+    control_chart_type: Optional[str]
+    subgroup_size: Optional[int]
+    allowed_values: Optional[List[str]]
+    tolerance_type: Optional[str]
+    tolerance: Optional[Decimal]
+    is_active: bool
+    sequence: int
+
+    class Config:
+        from_attributes = True
+
+
+class NestedPointResponse(BaseModel):
+    """Response DTO for inspection point with characteristics"""
+    id: int
+    point_code: str
+    point_name: str
+    description: Optional[str]
+    inspection_method: Optional[str]
+    inspection_equipment: Optional[str]
+    sequence: int
+    is_mandatory: bool
+    is_critical: bool
+    inspection_instructions: Optional[str]
+    acceptance_criteria: Optional[str]
+    is_active: bool
+    characteristics: List[NestedCharacteristicResponse] = Field(default_factory=list)
+
+    class Config:
+        from_attributes = True
+
+
+class NestedInspectionPlanResponse(BaseModel):
+    """Response DTO for full inspection plan with points and characteristics"""
+    id: int
+    organization_id: int
+    plant_id: Optional[int]
+    plan_code: str
+    plan_name: str
+    description: Optional[str]
+    plan_type: str
+    applies_to: str
+    material_id: Optional[int]
+    work_center_id: Optional[int]
+    frequency: str
+    frequency_value: Optional[int]
+    sample_size: Optional[int]
+    spc_enabled: bool
+    control_limits_config: Optional[Dict[str, Any]]
+    approved_by: Optional[int]
+    approved_date: Optional[datetime]
+    effective_date: Optional[date]
+    expiry_date: Optional[date]
+    instructions: Optional[str]
+    acceptance_criteria: Optional[str]
+    is_active: bool
+    revision: int
+    created_at: datetime
+    updated_at: Optional[datetime]
+    created_by: int
+    inspection_points: List[NestedPointResponse] = Field(default_factory=list)
+
+    class Config:
+        from_attributes = True
+
+
+class InspectionPlanUpdateNestedDTO(BaseModel):
+    """DTO for updating inspection plan (simple fields only)"""
+    name: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = None
+    material_id: Optional[int] = Field(None, gt=0)
+    work_center_id: Optional[int] = Field(None, gt=0)
+    frequency: Optional[str] = None
+    frequency_value: Optional[int] = Field(None, gt=0)
+    sample_size: Optional[int] = Field(None, gt=0)
+    spc_enabled: Optional[bool] = None
+    control_limits_config: Optional[Dict[str, Any]] = None
+    effective_date: Optional[date] = None
+    expiry_date: Optional[date] = None
+    instructions: Optional[str] = None
+    acceptance_criteria: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+# ========== Inspection Log DTOs ==========
+
+class InspectionResultMeasurementDTO(BaseModel):
+    """DTO for a single measurement in an inspection log"""
+    characteristic_id: int = Field(..., gt=0, description="Characteristic ID being measured")
+    measured_value: Optional[Decimal] = Field(None, description="Numeric measurement value")
+    measured_text: Optional[str] = Field(None, max_length=500, description="Text measurement value")
+    sample_number: Optional[int] = Field(None, gt=0)
+    notes: Optional[str] = None
+
+
+class InspectionLogCreateNestedDTO(BaseModel):
+    """DTO for creating an inspection log with measurements"""
+    inspection_plan_id: int = Field(..., gt=0, description="Inspection plan ID")
+    inspected_by_user_id: int = Field(..., gt=0, description="Inspector user ID")
+    work_order_id: Optional[int] = Field(None, gt=0)
+    material_id: Optional[int] = Field(None, gt=0)
+    lot_number: Optional[str] = Field(None, max_length=100)
+    serial_number: Optional[str] = Field(None, max_length=100)
+    measurements: List[InspectionResultMeasurementDTO] = Field(..., min_length=1, description="Measurement results")
+    inspection_equipment_id: Optional[str] = Field(None, max_length=100)
+    environmental_conditions: Optional[Dict[str, Any]] = None
+    notes: Optional[str] = None
+
+
+class InspectionLogMeasurementResponse(BaseModel):
+    """Response DTO for measurement in log"""
+    id: int
+    characteristic_id: int
+    characteristic_name: str
+    measured_value: Optional[Decimal]
+    measured_text: Optional[str]
+    is_conforming: Optional[bool]
+    deviation: Optional[Decimal]
+    is_out_of_control: bool
+    sample_number: Optional[int]
+    notes: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
+class InspectionLogResponse(BaseModel):
+    """Response DTO for inspection log"""
+    log_id: int
+    inspection_plan_id: int
+    plan_name: str
+    inspected_by_user_id: int
+    work_order_id: Optional[int]
+    material_id: Optional[int]
+    lot_number: Optional[str]
+    serial_number: Optional[str]
+    inspection_status: str  # PASS or FAIL
+    total_measurements: int
+    conforming_measurements: int
+    non_conforming_measurements: int
+    out_of_control_measurements: int
+    inspection_timestamp: datetime
+    measurements: List[InspectionLogMeasurementResponse]
+    notes: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
+# ========== SPC Chart DTOs ==========
+
+class SPCDataPoint(BaseModel):
+    """Single data point in SPC chart"""
+    timestamp: datetime
+    value: Decimal
+    is_out_of_control: bool
+    is_out_of_spec: bool
+
+    class Config:
+        from_attributes = True
+
+
+class SPCChartResponse(BaseModel):
+    """Response DTO for SPC chart data"""
+    characteristic_id: int
+    characteristic_name: str
+    period_start: datetime
+    period_end: datetime
+    sample_size: int
+    mean: Optional[Decimal]
+    std_dev: Optional[Decimal]
+    target_value: Optional[Decimal]
+    lower_spec_limit: Optional[Decimal]
+    upper_spec_limit: Optional[Decimal]
+    lower_control_limit: Optional[Decimal]
+    upper_control_limit: Optional[Decimal]
+    cp: Optional[Decimal]
+    cpk: Optional[Decimal]
+    capability_assessment: str
+    out_of_control_count: int
+    out_of_spec_count: int
+    data_points: List[SPCDataPoint]
+
+    class Config:
+        from_attributes = True

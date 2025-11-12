@@ -1,5 +1,5 @@
 from app.infrastructure.persistence.models import UserModel as User
-from app.models.organization import Organization
+from app.models.organization import Organization, CostingMethod
 from app.models.plant import Plant
 from app.models.department import Department
 from app.models.material import Material, MaterialCategory, UnitOfMeasure
@@ -9,11 +9,13 @@ from app.models.work_order import (
     WorkCenter,
     WorkOrderMaterial,
     ReworkConfig,
+    WorkOrderDependency,
     OrderType,
     OrderStatus,
     OperationStatus,
     WorkCenterType,
-    ReworkMode
+    ReworkMode,
+    DependencyType
 )
 from app.models.work_center_shift import WorkCenterShift
 from app.models.bom import (
@@ -33,7 +35,8 @@ from app.models.shift import (
 from app.models.ncr import (
     NCR,
     NCRStatus,
-    DefectType
+    DefectType,
+    DispositionType
 )
 from app.models.inspection import (
     InspectionPlan,

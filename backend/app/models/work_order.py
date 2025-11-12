@@ -21,6 +21,7 @@ class OrderStatus(str, enum.Enum):
     PLANNED = "PLANNED"
     RELEASED = "RELEASED"
     IN_PROGRESS = "IN_PROGRESS"
+    PAUSED = "PAUSED"
     COMPLETED = "COMPLETED"
     CANCELLED = "CANCELLED"
 
@@ -127,11 +128,20 @@ class WorkOrder(Base):
     rework_reason_code = Column(String(50), nullable=True)
     rework_mode = Column(Enum(ReworkMode), nullable=True)
 
+    # Costing fields (FRD_WORK_ORDERS.md lines 43-77)
+    standard_cost = Column(Float, nullable=True, default=0.0)
+    actual_material_cost = Column(Float, nullable=False, default=0.0)
+    actual_labor_cost = Column(Float, nullable=False, default=0.0)
+    actual_overhead_cost = Column(Float, nullable=False, default=0.0)
+    total_actual_cost = Column(Float, nullable=False, default=0.0)
+
     # Relationships
     material = relationship("Material", backref="work_orders")
     operations = relationship("WorkOrderOperation", back_populates="work_order", cascade="all, delete-orphan")
     materials = relationship("WorkOrderMaterial", back_populates="work_order", cascade="all, delete-orphan")
     parent_work_order = relationship("WorkOrder", remote_side=[id], backref="rework_orders")
+    dependencies = relationship("WorkOrderDependency", foreign_keys="WorkOrderDependency.work_order_id", back_populates="work_order", cascade="all, delete-orphan")
+    dependent_on = relationship("WorkOrderDependency", foreign_keys="WorkOrderDependency.depends_on_work_order_id", back_populates="depends_on_work_order", cascade="all, delete-orphan")
 
     # Unique constraint: work_order_number per organization and plant
     __table_args__ = (
@@ -240,6 +250,50 @@ class WorkOrderMaterial(Base):
 
     def __repr__(self):
         return f"<WorkOrderMaterial(wo_id={self.work_order_id}, mat_id={self.material_id}, planned={self.planned_quantity})>"
+
+
+class DependencyType(str, enum.Enum):
+    """Enum for work order dependency types (FRD_WORK_ORDERS.md)"""
+    FINISH_TO_START = "FINISH_TO_START"  # Most common: predecessor must finish before successor starts
+    START_TO_START = "START_TO_START"    # Successor can start when predecessor starts
+    FINISH_TO_FINISH = "FINISH_TO_FINISH"  # Both must finish together
+
+
+class WorkOrderDependency(Base):
+    """
+    Work Order Dependency entity - defines dependencies between work orders.
+
+    Implements Finish-to-Start, Start-to-Start, and Finish-to-Finish dependency logic.
+    Prevents work orders from starting until dependencies are satisfied.
+    Per FRD_WORK_ORDERS.md lines 11-35.
+    """
+    __tablename__ = "work_order_dependency"
+
+    id = Column(Integer, primary_key=True)
+    organization_id = Column(Integer, nullable=False, index=True)
+    plant_id = Column(Integer, nullable=False, index=True)
+    work_order_id = Column(Integer, ForeignKey('work_order.id', ondelete='CASCADE'), nullable=False, index=True)
+    depends_on_work_order_id = Column(Integer, ForeignKey('work_order.id', ondelete='CASCADE'), nullable=False, index=True)
+    dependency_type = Column(Enum(DependencyType), nullable=False, default=DependencyType.FINISH_TO_START)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    work_order = relationship("WorkOrder", foreign_keys=[work_order_id], back_populates="dependencies")
+    depends_on_work_order = relationship("WorkOrder", foreign_keys=[depends_on_work_order_id], back_populates="dependent_on")
+
+    # Constraints
+    __table_args__ = (
+        UniqueConstraint('work_order_id', 'depends_on_work_order_id',
+                         name='uq_work_order_dependency'),
+        Index('idx_work_order_dependency_org_plant', 'organization_id', 'plant_id'),
+        Index('idx_work_order_dependency_wo', 'work_order_id'),
+        Index('idx_work_order_dependency_depends_on', 'depends_on_work_order_id'),
+        CheckConstraint('work_order_id != depends_on_work_order_id', name='check_no_self_dependency'),
+    )
+
+    def __repr__(self):
+        return f"<WorkOrderDependency(wo={self.work_order_id}, depends_on={self.depends_on_work_order_id}, type='{self.dependency_type}')>"
 
 
 class ReworkConfig(Base):

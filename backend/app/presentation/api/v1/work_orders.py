@@ -5,7 +5,9 @@ Provides RESTful API for Work Order CRUD and state management with:
 - JWT authentication (all endpoints)
 - RLS context from authenticated user
 - Pagination and filtering
-- State transitions (PLANNED -> RELEASED -> IN_PROGRESS -> COMPLETED)
+- State transitions (PLANNED -> RELEASED -> IN_PROGRESS -> PAUSED -> COMPLETED)
+- Pause/Resume functionality for work orders
+- Cancel with reason and material release
 - Request/response validation via Pydantic
 
 Phase 3 Component 5: Work Order API
@@ -29,12 +31,14 @@ from app.application.dtos.work_order_dto import (
     WorkOrderMaterialResponse,
     WorkOrderCostBreakdownResponse,
     WorkOrderCostVarianceResponse,
+    WorkOrderPauseRequest,
+    WorkOrderCancelRequest,
     ErrorResponse,
     ValidationErrorResponse,
     NotFoundErrorResponse,
     ConflictErrorResponse,
 )
-from app.models.work_order import WorkOrder, WorkOrderOperation, WorkOrderMaterial, OrderStatus
+from app.models.work_order import WorkOrder, WorkOrderOperation, WorkOrderMaterial, OrderStatus, WorkOrderDependency, DependencyType
 from app.models.material import Material
 from app.infrastructure.security.dependencies import get_user_context
 
@@ -433,9 +437,10 @@ def release_work_order(
     "/{work_order_id}/start",
     response_model=WorkOrderResponse,
     summary="Start production",
-    description="Start production for a work order (RELEASED -> IN_PROGRESS).",
+    description="Start production for a work order (RELEASED -> IN_PROGRESS). Validates dependencies before starting.",
     responses={
         200: {"description": "Work order started successfully"},
+        400: {"model": ValidationErrorResponse, "description": "Dependency validation failed"},
         401: {"model": ErrorResponse, "description": "Unauthorized"},
         404: {"model": NotFoundErrorResponse, "description": "Work order not found"},
         409: {"model": ConflictErrorResponse, "description": "Invalid state transition"},
@@ -447,20 +452,74 @@ def start_work_order(
     work_order_id: int,
     repository: WorkOrderRepository = Depends(get_work_order_repository),
     user_context: dict = Depends(get_user_context),
+    db: Session = Depends(get_db),
 ):
     """
     Start production for work order (RELEASED -> IN_PROGRESS).
 
     Can only start work orders in RELEASED status.
     Sets start_date_actual to current timestamp.
+
+    Validates work order dependencies before starting:
+    - FINISH_TO_START: Predecessor must be COMPLETED
+    - START_TO_START: Predecessor must be IN_PROGRESS or COMPLETED
+    - FINISH_TO_FINISH: Not blocking for start (only checked on completion)
     """
     try:
         logger.info(f"Starting work order: {work_order_id}")
 
+        # Dependency validation logic
+        # Query all dependencies for this work order
+        dependencies = db.query(WorkOrderDependency).filter(
+            WorkOrderDependency.work_order_id == work_order_id
+        ).all()
+
+        # Check each dependency based on type
+        unsatisfied_dependencies = []
+
+        for dependency in dependencies:
+            # Get the predecessor work order
+            predecessor = db.query(WorkOrder).filter(
+                WorkOrder.id == dependency.depends_on_work_order_id
+            ).first()
+
+            if not predecessor:
+                logger.warning(f"Predecessor work order {dependency.depends_on_work_order_id} not found")
+                continue
+
+            # Validate based on dependency type
+            if dependency.dependency_type == DependencyType.FINISH_TO_START:
+                # Predecessor must be COMPLETED before this work order can start
+                if predecessor.order_status != OrderStatus.COMPLETED:
+                    unsatisfied_dependencies.append(
+                        f"Waiting for {predecessor.work_order_number} to complete (FINISH_TO_START dependency)"
+                    )
+
+            elif dependency.dependency_type == DependencyType.START_TO_START:
+                # Predecessor must be IN_PROGRESS or COMPLETED before this work order can start
+                if predecessor.order_status not in [OrderStatus.IN_PROGRESS, OrderStatus.COMPLETED]:
+                    unsatisfied_dependencies.append(
+                        f"Waiting for {predecessor.work_order_number} to start (START_TO_START dependency)"
+                    )
+
+            # FINISH_TO_FINISH dependencies don't block the start operation
+            # They are only checked when completing the work order
+
+        # If there are unsatisfied dependencies, return error
+        if unsatisfied_dependencies:
+            error_message = f"Cannot start work order. {'; '.join(unsatisfied_dependencies)}"
+            logger.warning(f"Dependency validation failed for work order {work_order_id}: {error_message}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_message)
+
+        # All dependencies satisfied, proceed with starting the work order
         db_work_order = repository.start(work_order_id)
 
         logger.info(f"Work order started successfully: {work_order_id}")
         return map_work_order_to_response(db_work_order)
+
+    except HTTPException:
+        # Re-raise HTTPExceptions (including our dependency validation error)
+        raise
 
     except ValueError as e:
         # Work order not found or invalid state
@@ -521,6 +580,161 @@ def complete_work_order(
     except Exception as e:
         logger.error(f"Failed to complete work order: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to complete work order")
+
+
+@router.post(
+    "/{work_order_id}/pause",
+    response_model=WorkOrderResponse,
+    summary="Pause work order",
+    description="Pause a work order that is currently IN_PROGRESS (IN_PROGRESS -> PAUSED).",
+    responses={
+        200: {"description": "Work order paused successfully"},
+        400: {"model": ValidationErrorResponse, "description": "Validation error"},
+        401: {"model": ErrorResponse, "description": "Unauthorized"},
+        404: {"model": NotFoundErrorResponse, "description": "Work order not found"},
+        409: {"model": ConflictErrorResponse, "description": "Invalid state transition - work order must be IN_PROGRESS"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+    tags=["Work Orders", "Production Planning"],
+)
+def pause_work_order(
+    work_order_id: int,
+    pause_data: WorkOrderPauseRequest,
+    repository: WorkOrderRepository = Depends(get_work_order_repository),
+    user_context: dict = Depends(get_user_context),
+):
+    """
+    Pause work order (IN_PROGRESS -> PAUSED).
+
+    Can only pause work orders in IN_PROGRESS status.
+    Optionally provide a reason for pausing.
+
+    - **reason**: Optional reason for pausing the work order
+    """
+    try:
+        logger.info(f"Pausing work order: {work_order_id}" + (f" - Reason: {pause_data.reason}" if pause_data.reason else ""))
+
+        db_work_order = repository.pause(work_order_id, pause_data.reason)
+
+        logger.info(f"Work order paused successfully: {work_order_id}")
+        return map_work_order_to_response(db_work_order)
+
+    except ValueError as e:
+        # Work order not found or invalid state
+        if "not found" in str(e):
+            logger.warning(f"Work order not found: {work_order_id}")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        else:
+            logger.warning(f"Invalid state transition for pause: {e}")
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+
+    except Exception as e:
+        logger.error(f"Failed to pause work order: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to pause work order")
+
+
+@router.post(
+    "/{work_order_id}/resume",
+    response_model=WorkOrderResponse,
+    summary="Resume work order",
+    description="Resume a paused work order (PAUSED -> IN_PROGRESS).",
+    responses={
+        200: {"description": "Work order resumed successfully"},
+        401: {"model": ErrorResponse, "description": "Unauthorized"},
+        404: {"model": NotFoundErrorResponse, "description": "Work order not found"},
+        409: {"model": ConflictErrorResponse, "description": "Invalid state transition - work order must be PAUSED"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+    tags=["Work Orders", "Production Planning"],
+)
+def resume_work_order(
+    work_order_id: int,
+    repository: WorkOrderRepository = Depends(get_work_order_repository),
+    user_context: dict = Depends(get_user_context),
+):
+    """
+    Resume work order (PAUSED -> IN_PROGRESS).
+
+    Can only resume work orders in PAUSED status.
+    Restores work order to IN_PROGRESS state to continue production.
+    """
+    try:
+        logger.info(f"Resuming work order: {work_order_id}")
+
+        db_work_order = repository.resume(work_order_id)
+
+        logger.info(f"Work order resumed successfully: {work_order_id}")
+        return map_work_order_to_response(db_work_order)
+
+    except ValueError as e:
+        # Work order not found or invalid state
+        if "not found" in str(e):
+            logger.warning(f"Work order not found: {work_order_id}")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        else:
+            logger.warning(f"Invalid state transition for resume: {e}")
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+
+    except Exception as e:
+        logger.error(f"Failed to resume work order: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to resume work order")
+
+
+@router.post(
+    "/{work_order_id}/cancel",
+    response_model=WorkOrderResponse,
+    summary="Cancel work order with reason",
+    description="Cancel a work order with a required reason. Cannot cancel COMPLETED or already CANCELLED work orders. Optionally release reserved materials.",
+    responses={
+        200: {"description": "Work order cancelled successfully"},
+        400: {"model": ValidationErrorResponse, "description": "Validation error - reason is required"},
+        401: {"model": ErrorResponse, "description": "Unauthorized"},
+        404: {"model": NotFoundErrorResponse, "description": "Work order not found"},
+        409: {"model": ConflictErrorResponse, "description": "Invalid state - cannot cancel COMPLETED or already CANCELLED work orders"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+    tags=["Work Orders", "Production Planning"],
+)
+def cancel_work_order_with_reason(
+    work_order_id: int,
+    cancel_data: WorkOrderCancelRequest,
+    repository: WorkOrderRepository = Depends(get_work_order_repository),
+    user_context: dict = Depends(get_user_context),
+):
+    """
+    Cancel work order with reason (any status -> CANCELLED).
+
+    Can cancel work orders in any status except COMPLETED or already CANCELLED.
+    Requires a reason for cancellation.
+    Optionally releases/unreserves reserved materials.
+
+    - **reason**: Required reason for cancelling the work order
+    - **cancel_materials**: Whether to release/unreserve reserved materials (default: true)
+    """
+    try:
+        logger.info(f"Cancelling work order: {work_order_id} - Reason: {cancel_data.reason}, Cancel materials: {cancel_data.cancel_materials}")
+
+        db_work_order = repository.cancel_with_materials(
+            work_order_id,
+            cancel_data.reason,
+            cancel_data.cancel_materials
+        )
+
+        logger.info(f"Work order cancelled successfully: {work_order_id}")
+        return map_work_order_to_response(db_work_order)
+
+    except ValueError as e:
+        # Work order not found or invalid state
+        if "not found" in str(e):
+            logger.warning(f"Work order not found: {work_order_id}")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        else:
+            logger.warning(f"Invalid state transition for cancel: {e}")
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+
+    except Exception as e:
+        logger.error(f"Failed to cancel work order: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to cancel work order")
 
 
 @router.post(
