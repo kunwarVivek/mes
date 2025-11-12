@@ -83,6 +83,29 @@
   background-color: #f5f5f5;
 }
 
+.button--outline {
+  background-color: white;
+  color: #262626;
+  border: 1px solid #d4d4d4;
+}
+
+.button--outline:hover:not(:disabled) {
+  background-color: #f5f5f5;
+  border-color: #a3a3a3;
+}
+
+.button--link {
+  background-color: transparent;
+  color: #0ea5e9;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  border: none;
+}
+
+.button--link:hover:not(:disabled) {
+  color: #0284c7;
+}
+
 /* Full width */
 .button--full-width {
   width: 100%;

@@ -1,4 +1,4 @@
-import { Card } from '@/design-system/atoms/Card'
+import { Card } from '@/components/ui/card'
 
 export interface MetricCardProps {
   value: number | string
@@ -69,7 +69,7 @@ export function MetricCard({
       : value
 
   return (
-    <Card className={className} padding="none">
+    <Card className={className}>
       <div className="p-4">
         <p className="text-sm text-gray-600">{label}</p>
         <div className="flex items-baseline gap-2 mt-2">
