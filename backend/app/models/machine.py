@@ -26,6 +26,12 @@ class Machine(Base):
     work_center_id = Column(Integer, nullable=False, index=True)
     status = Column(Enum(MachineStatus), nullable=False, default=MachineStatus.AVAILABLE)
     is_active = Column(Boolean, default=True, nullable=False)
+
+    # Capacity and maintenance fields (FRD_EQUIPMENT.md, FRD_API_CONTRACTS.md lines 227-233)
+    capacity_units_per_hour = Column(Float, nullable=True)
+    last_maintenance_date = Column(DateTime(timezone=True), nullable=True)
+    next_maintenance_due = Column(DateTime(timezone=True), nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

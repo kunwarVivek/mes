@@ -34,7 +34,7 @@ from app.application.dtos.work_order_dto import (
     NotFoundErrorResponse,
     ConflictErrorResponse,
 )
-from app.models.work_order import WorkOrder, WorkOrderOperation, WorkOrderMaterial, OrderStatus
+from app.models.work_order import WorkOrder, WorkOrderOperation, WorkOrderMaterial, OrderStatus, WorkOrderDependency, DependencyType
 from app.models.material import Material
 from app.infrastructure.security.dependencies import get_user_context
 
@@ -433,9 +433,10 @@ def release_work_order(
     "/{work_order_id}/start",
     response_model=WorkOrderResponse,
     summary="Start production",
-    description="Start production for a work order (RELEASED -> IN_PROGRESS).",
+    description="Start production for a work order (RELEASED -> IN_PROGRESS). Validates dependencies before starting.",
     responses={
         200: {"description": "Work order started successfully"},
+        400: {"model": ValidationErrorResponse, "description": "Dependency validation failed"},
         401: {"model": ErrorResponse, "description": "Unauthorized"},
         404: {"model": NotFoundErrorResponse, "description": "Work order not found"},
         409: {"model": ConflictErrorResponse, "description": "Invalid state transition"},
@@ -447,20 +448,74 @@ def start_work_order(
     work_order_id: int,
     repository: WorkOrderRepository = Depends(get_work_order_repository),
     user_context: dict = Depends(get_user_context),
+    db: Session = Depends(get_db),
 ):
     """
     Start production for work order (RELEASED -> IN_PROGRESS).
 
     Can only start work orders in RELEASED status.
     Sets start_date_actual to current timestamp.
+
+    Validates work order dependencies before starting:
+    - FINISH_TO_START: Predecessor must be COMPLETED
+    - START_TO_START: Predecessor must be IN_PROGRESS or COMPLETED
+    - FINISH_TO_FINISH: Not blocking for start (only checked on completion)
     """
     try:
         logger.info(f"Starting work order: {work_order_id}")
 
+        # Dependency validation logic
+        # Query all dependencies for this work order
+        dependencies = db.query(WorkOrderDependency).filter(
+            WorkOrderDependency.work_order_id == work_order_id
+        ).all()
+
+        # Check each dependency based on type
+        unsatisfied_dependencies = []
+
+        for dependency in dependencies:
+            # Get the predecessor work order
+            predecessor = db.query(WorkOrder).filter(
+                WorkOrder.id == dependency.depends_on_work_order_id
+            ).first()
+
+            if not predecessor:
+                logger.warning(f"Predecessor work order {dependency.depends_on_work_order_id} not found")
+                continue
+
+            # Validate based on dependency type
+            if dependency.dependency_type == DependencyType.FINISH_TO_START:
+                # Predecessor must be COMPLETED before this work order can start
+                if predecessor.order_status != OrderStatus.COMPLETED:
+                    unsatisfied_dependencies.append(
+                        f"Waiting for {predecessor.work_order_number} to complete (FINISH_TO_START dependency)"
+                    )
+
+            elif dependency.dependency_type == DependencyType.START_TO_START:
+                # Predecessor must be IN_PROGRESS or COMPLETED before this work order can start
+                if predecessor.order_status not in [OrderStatus.IN_PROGRESS, OrderStatus.COMPLETED]:
+                    unsatisfied_dependencies.append(
+                        f"Waiting for {predecessor.work_order_number} to start (START_TO_START dependency)"
+                    )
+
+            # FINISH_TO_FINISH dependencies don't block the start operation
+            # They are only checked when completing the work order
+
+        # If there are unsatisfied dependencies, return error
+        if unsatisfied_dependencies:
+            error_message = f"Cannot start work order. {'; '.join(unsatisfied_dependencies)}"
+            logger.warning(f"Dependency validation failed for work order {work_order_id}: {error_message}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_message)
+
+        # All dependencies satisfied, proceed with starting the work order
         db_work_order = repository.start(work_order_id)
 
         logger.info(f"Work order started successfully: {work_order_id}")
         return map_work_order_to_response(db_work_order)
+
+    except HTTPException:
+        # Re-raise HTTPExceptions (including our dependency validation error)
+        raise
 
     except ValueError as e:
         # Work order not found or invalid state

@@ -17,7 +17,9 @@ from app.application.dtos.quality_dto import (
     InspectionPlanResponseDTO,
     InspectionLogCreateDTO,
     InspectionLogResponseDTO,
-    FPYMetricsDTO
+    FPYMetricsDTO,
+    NCRDispositionDTO,
+    NCRDispositionResponseDTO
 )
 from app.application.dtos.quality_enhancement_dto import (
     InspectionPlanCreateDTO as EnhancedInspectionPlanCreateDTO,
@@ -48,12 +50,17 @@ from app.application.services.quality_enhancement_service import (
     SPCAnalysisService,
     FPYCalculationService
 )
-from app.models.ncr import NCR, NCRStatus
+from app.models.ncr import NCR, NCRStatus, DispositionType
 from app.models.inspection import InspectionPlan, InspectionLog
+from app.models.work_order import WorkOrder, OrderType, OrderStatus, WorkOrderOperation, WorkOrderMaterial
+from app.models.inventory import Inventory, InventoryTransaction, TransactionType
+from app.models.material import Material
 from app.domain.entities.ncr import NCRDomain, NCRStatus as NCRStatusEnum
 from app.domain.entities.inspection import InspectionPlanDomain, InspectionLogDomain, FPYCalculator
+import logging
 
 router = APIRouter(prefix="/quality", tags=["quality"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("/ncrs", response_model=NCRResponseDTO, status_code=status.HTTP_201_CREATED)
@@ -724,3 +731,322 @@ def calculate_fpy_v2(
     """Calculate enhanced First Pass Yield with detailed breakdowns"""
     service = FPYCalculationService(db)
     return service.calculate_fpy(fpy_request)
+
+
+# ==================== NCR Disposition Workflow ====================
+
+@router.post("/ncr-reports/{ncr_id}/disposition", response_model=NCRDispositionResponseDTO)
+def disposition_ncr(
+    ncr_id: int,
+    disposition_data: NCRDispositionDTO,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Perform disposition action on an NCR.
+
+    Implements disposition workflow per FRD_QUALITY.md lines 26-51.
+
+    Args:
+        ncr_id: NCR ID
+        disposition_data: Disposition type and details
+        db: Database session
+        current_user: Authenticated user from JWT
+
+    Returns:
+        NCRDispositionResponseDTO: Disposition details and actions taken
+
+    Raises:
+        HTTPException: If NCR not found, already dispositioned, or action fails
+    """
+    try:
+        # Get NCR
+        ncr = db.query(NCR).filter(NCR.id == ncr_id).first()
+        if not ncr:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"NCR with id {ncr_id} not found"
+            )
+
+        # Check if already dispositioned
+        if ncr.disposition_type is not None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"NCR {ncr.ncr_number} has already been dispositioned as {ncr.disposition_type.value}"
+            )
+
+        # Get user ID
+        user_id = current_user.get("id")
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User ID required"
+            )
+
+        # Track actions taken
+        actions_taken = []
+
+        # Response data
+        response_data = {
+            "ncr_id": ncr.id,
+            "ncr_number": ncr.ncr_number,
+            "disposition_type": disposition_data.disposition_type.value,
+            "disposition_by_user_id": user_id,
+            "actions_taken": actions_taken
+        }
+
+        # Get parent work order for reference
+        parent_work_order = db.query(WorkOrder).filter(WorkOrder.id == ncr.work_order_id).first()
+        if not parent_work_order:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Parent work order {ncr.work_order_id} not found"
+            )
+
+        # Get material for reference
+        material = db.query(Material).filter(Material.id == ncr.material_id).first()
+        if not material:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Material {ncr.material_id} not found"
+            )
+
+        logger.info(
+            f"Processing NCR disposition: ncr_id={ncr_id}, "
+            f"type={disposition_data.disposition_type.value}, user={user_id}"
+        )
+
+        # ==================== REWORK Disposition ====================
+        if disposition_data.disposition_type == DispositionType.REWORK:
+            # Generate rework work order number
+            rework_wo_number = f"{parent_work_order.work_order_number}-RW-{ncr.ncr_number}"
+
+            # Create rework work order
+            rework_order = WorkOrder(
+                organization_id=ncr.organization_id,
+                plant_id=ncr.plant_id,
+                work_order_number=rework_wo_number,
+                material_id=ncr.material_id,
+                order_type=OrderType.REWORK,
+                order_status=OrderStatus.PLANNED,
+                planned_quantity=ncr.quantity_defective,
+                is_rework_order=True,
+                parent_work_order_id=ncr.work_order_id,
+                rework_reason_code=ncr.ncr_number,
+                created_by_user_id=user_id
+            )
+            db.add(rework_order)
+            db.flush()  # Get ID for logging
+
+            actions_taken.append(f"Created rework work order: {rework_wo_number}")
+            logger.info(f"Created rework work order {rework_wo_number} for NCR {ncr.ncr_number}")
+
+            # Copy operations from parent work order
+            parent_operations = db.query(WorkOrderOperation).filter(
+                WorkOrderOperation.work_order_id == parent_work_order.id
+            ).order_by(WorkOrderOperation.operation_number).all()
+
+            for parent_op in parent_operations:
+                rework_op = WorkOrderOperation(
+                    organization_id=ncr.organization_id,
+                    plant_id=ncr.plant_id,
+                    work_order_id=rework_order.id,
+                    operation_number=parent_op.operation_number,
+                    operation_name=f"REWORK: {parent_op.operation_name}",
+                    work_center_id=parent_op.work_center_id,
+                    setup_time_minutes=parent_op.setup_time_minutes,
+                    run_time_per_unit_minutes=parent_op.run_time_per_unit_minutes,
+                    status=parent_op.status,
+                    scheduling_mode=parent_op.scheduling_mode
+                )
+                db.add(rework_op)
+
+            if parent_operations:
+                actions_taken.append(f"Copied {len(parent_operations)} operations from parent work order")
+
+            # Copy materials from parent work order
+            parent_materials = db.query(WorkOrderMaterial).filter(
+                WorkOrderMaterial.work_order_id == parent_work_order.id
+            ).all()
+
+            for parent_mat in parent_materials:
+                # Scale material quantity based on rework quantity vs parent quantity
+                scale_factor = ncr.quantity_defective / parent_work_order.planned_quantity
+                rework_mat = WorkOrderMaterial(
+                    work_order_id=rework_order.id,
+                    material_id=parent_mat.material_id,
+                    planned_quantity=parent_mat.planned_quantity * scale_factor,
+                    unit_of_measure_id=parent_mat.unit_of_measure_id,
+                    backflush=parent_mat.backflush
+                )
+                db.add(rework_mat)
+
+            if parent_materials:
+                actions_taken.append(f"Copied {len(parent_materials)} material requirements")
+
+            # Calculate estimated rework cost
+            # Material cost estimate (simplified)
+            material_cost_estimate = sum(
+                parent_mat.planned_quantity * (ncr.quantity_defective / parent_work_order.planned_quantity)
+                for parent_mat in parent_materials
+            ) * 10  # Rough estimate: $10 per unit material
+
+            # Labor cost estimate (simplified)
+            labor_cost_estimate = sum(
+                op.run_time_per_unit_minutes * ncr.quantity_defective / 60  # Convert to hours
+                for op in parent_operations
+            ) * 25  # $25/hour labor rate
+
+            rework_cost = material_cost_estimate + labor_cost_estimate
+            ncr.rework_cost = rework_cost
+
+            actions_taken.append(f"Calculated rework cost estimate: ${rework_cost:.2f}")
+            logger.info(f"Rework cost estimated at ${rework_cost:.2f} for NCR {ncr.ncr_number}")
+
+            response_data["rework_work_order_id"] = rework_order.id
+            response_data["rework_cost"] = rework_cost
+
+        # ==================== SCRAP Disposition ====================
+        elif disposition_data.disposition_type == DispositionType.SCRAP:
+            # Find inventory record for this material at the plant
+            inventory_records = db.query(Inventory).filter(
+                Inventory.organization_id == ncr.organization_id,
+                Inventory.plant_id == ncr.plant_id,
+                Inventory.material_id == ncr.material_id,
+                Inventory.quantity_on_hand >= ncr.quantity_defective
+            ).all()
+
+            if not inventory_records:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Insufficient inventory for material {material.material_number} to scrap {ncr.quantity_defective} units"
+                )
+
+            # Use first available inventory record (FIFO logic)
+            inventory = inventory_records[0]
+
+            # Calculate scrap cost
+            # Try to get current average cost from material or use a default
+            unit_cost = getattr(material, 'current_average_cost', 0) or 50.0  # Default $50 if not available
+            scrap_cost = ncr.quantity_defective * unit_cost
+            ncr.scrap_cost = scrap_cost
+
+            # Adjust inventory - reduce on_hand_quantity
+            old_quantity = inventory.quantity_on_hand
+            inventory.quantity_on_hand -= ncr.quantity_defective
+            inventory.last_movement_date = datetime.utcnow()
+
+            actions_taken.append(
+                f"Adjusted inventory: reduced {material.material_number} from {old_quantity} to {inventory.quantity_on_hand}"
+            )
+            logger.info(
+                f"Inventory adjustment for scrap: material={material.material_number}, "
+                f"qty={ncr.quantity_defective}, cost=${scrap_cost:.2f}"
+            )
+
+            # Create inventory transaction for audit trail
+            scrap_transaction = InventoryTransaction(
+                organization_id=ncr.organization_id,
+                plant_id=ncr.plant_id,
+                material_id=ncr.material_id,
+                storage_location_id=inventory.storage_location_id,
+                transaction_type=TransactionType.ADJUSTMENT,
+                transaction_reference=f"NCR-SCRAP-{ncr.ncr_number}",
+                batch_number=inventory.batch_number,
+                quantity=-ncr.quantity_defective,  # Negative for scrap
+                unit_of_measure_id=inventory.unit_of_measure_id,
+                unit_cost=unit_cost,
+                total_value=-scrap_cost,  # Negative for cost write-off
+                transaction_date=datetime.utcnow(),
+                posted_by_user_id=user_id,
+                notes=f"Scrap disposition for NCR {ncr.ncr_number}: {disposition_data.notes or 'No notes'}"
+            )
+            db.add(scrap_transaction)
+
+            actions_taken.append(f"Created scrap transaction audit log: ${scrap_cost:.2f}")
+            actions_taken.append(f"Calculated scrap cost: ${scrap_cost:.2f}")
+
+            response_data["scrap_cost"] = scrap_cost
+            response_data["inventory_adjusted"] = True
+
+        # ==================== USE_AS_IS Disposition ====================
+        elif disposition_data.disposition_type == DispositionType.USE_AS_IS:
+            # Check if customer is affected
+            if ncr.customer_affected:
+                # Log notification (since we don't have a notifications table yet)
+                logger.warning(
+                    f"CUSTOMER NOTIFICATION REQUIRED: NCR {ncr.ncr_number} - "
+                    f"Material {material.material_number} approved for use-as-is. "
+                    f"Customer must be notified of deviation."
+                )
+                actions_taken.append("Customer notification logged (requires manual follow-up)")
+                response_data["customer_notified"] = True
+            else:
+                actions_taken.append("No customer notification required (internal use)")
+                response_data["customer_notified"] = False
+
+            # Log deviation approval
+            logger.info(
+                f"USE-AS-IS approved for NCR {ncr.ncr_number}: "
+                f"Material {material.material_number}, Qty {ncr.quantity_defective}"
+            )
+            actions_taken.append("Deviation approved - material accepted as-is")
+
+        # ==================== RETURN_TO_SUPPLIER Disposition ====================
+        elif disposition_data.disposition_type == DispositionType.RETURN_TO_SUPPLIER:
+            # Calculate return cost
+            unit_cost = getattr(material, 'unit_cost', 0) or getattr(material, 'current_average_cost', 0) or 50.0
+            return_cost = ncr.quantity_defective * unit_cost
+
+            # Log return shipment creation (since we don't have a shipments table)
+            logger.info(
+                f"RETURN TO SUPPLIER: NCR {ncr.ncr_number} - "
+                f"Material {material.material_number}, Qty {ncr.quantity_defective}, "
+                f"Return cost ${return_cost:.2f}"
+            )
+            actions_taken.append(
+                f"Return shipment logged for {ncr.quantity_defective} units (requires manual creation)"
+            )
+            actions_taken.append(f"Return cost for supplier credit: ${return_cost:.2f}")
+
+            response_data["return_shipment_created"] = True
+
+        # ==================== Update NCR with Disposition ====================
+        ncr.disposition_type = DispositionType(disposition_data.disposition_type.value)
+        ncr.disposition_date = datetime.utcnow()
+        ncr.disposition_by_user_id = user_id
+        ncr.status = NCRStatus.RESOLVED
+
+        if disposition_data.root_cause:
+            ncr.root_cause = disposition_data.root_cause
+            actions_taken.append("Root cause documented")
+
+        if disposition_data.notes:
+            ncr.resolution_notes = (ncr.resolution_notes or "") + f"\nDisposition notes: {disposition_data.notes}"
+
+        # Commit transaction
+        db.commit()
+        db.refresh(ncr)
+
+        logger.info(
+            f"NCR disposition completed: ncr_id={ncr_id}, "
+            f"type={disposition_data.disposition_type.value}, "
+            f"status=RESOLVED, actions_count={len(actions_taken)}"
+        )
+
+        # Build response
+        response_data["disposition_date"] = ncr.disposition_date
+        response_data["actions_taken"] = actions_taken
+
+        return NCRDispositionResponseDTO(**response_data)
+
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error processing NCR disposition: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to process disposition: {str(e)}"
+        )

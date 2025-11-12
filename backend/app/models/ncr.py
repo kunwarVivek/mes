@@ -25,6 +25,14 @@ class DefectType(str, enum.Enum):
     OTHER = "OTHER"
 
 
+class DispositionType(str, enum.Enum):
+    """Enum for NCR disposition types (FRD_QUALITY.md lines 15-24)"""
+    REWORK = "REWORK"  # Create rework work order
+    SCRAP = "SCRAP"  # Scrap defective material, adjust inventory
+    USE_AS_IS = "USE_AS_IS"  # Accept with deviation, notify customer
+    RETURN_TO_SUPPLIER = "RETURN_TO_SUPPLIER"  # Return to supplier for credit
+
+
 class NCR(Base):
     """
     Non-Conformance Report (NCR) entity.
@@ -50,6 +58,16 @@ class NCR(Base):
     resolution_notes = Column(String(1000), nullable=True)
     resolved_by_user_id = Column(Integer, nullable=True)
     resolved_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Disposition fields (FRD_QUALITY.md lines 15-51)
+    disposition_type = Column(Enum(DispositionType), nullable=True, index=True)
+    disposition_date = Column(DateTime(timezone=True), nullable=True)
+    disposition_by_user_id = Column(Integer, nullable=True)
+    rework_cost = Column(Float, nullable=True, default=0.0)
+    scrap_cost = Column(Float, nullable=True, default=0.0)
+    customer_affected = Column(Boolean, default=False, nullable=False)
+    root_cause = Column(String(1000), nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

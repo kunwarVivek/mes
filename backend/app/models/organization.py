@@ -1,10 +1,18 @@
 """
 SQLAlchemy model for Organization - Multi-tenant foundation
 """
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, UniqueConstraint, Index
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, UniqueConstraint, Index, Enum
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
+import enum
+
+
+class CostingMethod(str, enum.Enum):
+    """Enum for material costing methods (FRD_MATERIAL_MANAGEMENT.md)"""
+    FIFO = "FIFO"  # First-In-First-Out
+    LIFO = "LIFO"  # Last-In-First-Out
+    WEIGHTED_AVERAGE = "WEIGHTED_AVERAGE"  # Moving weighted average
 
 
 class Organization(Base):
@@ -21,6 +29,9 @@ class Organization(Base):
     org_name = Column(String(200), nullable=False)
     subdomain = Column(String(100), unique=True, nullable=True)  # For white-label access
     is_active = Column(Boolean, default=True, nullable=False)
+
+    # Material costing configuration (FRD_MATERIAL_MANAGEMENT.md lines 14-17)
+    costing_method = Column(Enum(CostingMethod), nullable=False, default=CostingMethod.WEIGHTED_AVERAGE)
 
     # Audit fields
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
