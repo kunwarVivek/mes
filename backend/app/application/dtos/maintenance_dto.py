@@ -3,7 +3,7 @@ DTOs for Maintenance Management module.
 Pydantic models for API request/response validation.
 """
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from app.domain.entities.maintenance import TriggerType, PMStatus, DowntimeCategory
 
@@ -172,3 +172,39 @@ class MTBFMTTRQueryDTO(BaseModel):
         if start_date is not None and v < start_date:
             raise ValueError("End date cannot be before start date")
         return v
+
+
+# Comprehensive Maintenance Metrics DTOs
+class MachineMetricsDTO(BaseModel):
+    """DTO for individual machine maintenance metrics"""
+    machine_id: int
+    machine_code: str
+    machine_name: str
+    mtbf_hours: float
+    mttr_hours: float
+    total_failures: int
+    total_downtime_hours: float
+    total_repair_hours: float
+    total_operating_hours: float
+    availability_percent: float
+    pm_compliance_percent: float
+    scheduled_pm_count: int
+    completed_pm_count: int
+
+
+class PlantAggregateMetricsDTO(BaseModel):
+    """DTO for plant-level aggregate metrics"""
+    avg_mtbf_hours: float
+    avg_mttr_hours: float
+    total_failures: int
+    total_downtime_hours: float
+    avg_availability_percent: float
+    avg_pm_compliance_percent: float
+
+
+class MaintenanceMetricsResponseDTO(BaseModel):
+    """DTO for comprehensive maintenance metrics response"""
+    period_start: datetime
+    period_end: datetime
+    machine_metrics: List[MachineMetricsDTO]
+    plant_aggregate: PlantAggregateMetricsDTO

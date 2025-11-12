@@ -13,7 +13,8 @@ from app.application.dtos.maintenance_dto import (
     PMScheduleCreateDTO, PMScheduleUpdateDTO, PMScheduleResponseDTO,
     PMWorkOrderCreateDTO, PMWorkOrderUpdateDTO, PMWorkOrderResponseDTO,
     DowntimeEventCreateDTO, DowntimeEventUpdateDTO, DowntimeEventResponseDTO,
-    MTBFMTTRMetricsDTO, MTBFMTTRQueryDTO
+    MTBFMTTRMetricsDTO, MTBFMTTRQueryDTO,
+    MaintenanceMetricsResponseDTO, MachineMetricsDTO, PlantAggregateMetricsDTO
 )
 from app.domain.entities.maintenance import (
     PMScheduleDomain, PMWorkOrderDomain, DowntimeEventDomain,
@@ -449,3 +450,107 @@ async def get_mtbf_mttr_metrics(
         mttr=metrics.mttr,
         availability=metrics.availability
     )
+
+
+# Comprehensive Maintenance Metrics Endpoint
+@router.get("/metrics", response_model=MaintenanceMetricsResponseDTO)
+async def get_maintenance_metrics(
+    start_date: datetime = Query(..., description="Start date for metrics period (required)"),
+    end_date: datetime = Query(..., description="End date for metrics period (required)"),
+    machine_id: Optional[int] = Query(None, description="Filter by specific machine ID (optional)"),
+    plant_id: Optional[int] = Query(None, description="Filter by plant ID (optional)"),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_active_user)
+):
+    """
+    Calculate comprehensive maintenance metrics for machines within a date range.
+
+    Returns MTBF, MTTR, availability, PM compliance, and other maintenance KPIs.
+
+    **Calculation Formulas:**
+    - MTBF (Mean Time Between Failures) = Total Operating Time / Number of Failures
+    - MTTR (Mean Time To Repair) = Total Repair Time / Number of Repairs
+    - Availability = (Total Time - Downtime) / Total Time × 100
+    - PM Compliance = (Completed PM / Scheduled PM) × 100
+
+    **Query Parameters:**
+    - start_date (required): Start of time range for metrics calculation
+    - end_date (required): End of time range for metrics calculation
+    - machine_id (optional): Specific machine or all machines if not provided
+    - plant_id (optional): Filter by plant (overrides user's default plant)
+
+    **Response includes:**
+    - machine_metrics: Array of per-machine metrics
+    - plant_aggregate: Aggregated metrics across all machines
+
+    **Data Sources:**
+    - downtime_event table for failures and downtime
+    - maintenance_work_orders (pm_work_order) for PM compliance
+    - Breakdown events (category = BREAKDOWN) for failure counting
+    """
+    repository = MaintenanceRepository(db)
+
+    # Validate date range
+    if end_date < start_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="End date cannot be before start date"
+        )
+
+    # Determine which plant_id to use
+    target_plant_id = plant_id if plant_id is not None else current_user["plant_id"]
+
+    # Log the metrics calculation request
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(
+        f"Calculating maintenance metrics: org={current_user['organization_id']}, "
+        f"plant={target_plant_id}, machine={machine_id}, "
+        f"period={start_date.isoformat()} to {end_date.isoformat()}"
+    )
+
+    try:
+        # Calculate comprehensive metrics
+        metrics_data = repository.calculate_comprehensive_maintenance_metrics(
+            organization_id=current_user["organization_id"],
+            plant_id=target_plant_id,
+            start_date=start_date,
+            end_date=end_date,
+            machine_id=machine_id
+        )
+
+        # Convert to response DTOs
+        machine_metrics_dtos = [
+            MachineMetricsDTO(**machine_data)
+            for machine_data in metrics_data["machine_metrics"]
+        ]
+
+        plant_aggregate_dto = PlantAggregateMetricsDTO(**metrics_data["plant_aggregate"])
+
+        response = MaintenanceMetricsResponseDTO(
+            period_start=start_date,
+            period_end=end_date,
+            machine_metrics=machine_metrics_dtos,
+            plant_aggregate=plant_aggregate_dto
+        )
+
+        logger.info(
+            f"Maintenance metrics calculated successfully: "
+            f"{len(machine_metrics_dtos)} machines, "
+            f"{metrics_data['plant_aggregate']['total_failures']} total failures"
+        )
+
+        return response
+
+    except ValueError as e:
+        logger.error(f"Validation error in maintenance metrics calculation: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Error calculating maintenance metrics: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to calculate maintenance metrics. Please check logs for details."
+        )

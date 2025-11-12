@@ -149,6 +149,25 @@ class WorkOrderMaterialCreateRequest(BaseModel):
         return v
 
 
+class WorkOrderPauseRequest(BaseModel):
+    """DTO for pausing a work order"""
+    reason: Optional[str] = Field(default=None, description="Optional reason for pausing the work order")
+
+
+class WorkOrderCancelRequest(BaseModel):
+    """DTO for cancelling a work order"""
+    reason: str = Field(description="Required reason for cancelling the work order")
+    cancel_materials: bool = Field(default=True, description="Whether to release/unreserve reserved materials (default: true)")
+
+    @field_validator('reason')
+    @classmethod
+    def validate_reason(cls, v: str) -> str:
+        """Validate reason is not empty"""
+        if not v or not v.strip():
+            raise ValueError('reason is required and cannot be empty')
+        return v.strip()
+
+
 class ErrorResponse(BaseModel):
     """Generic error response"""
     detail: str

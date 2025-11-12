@@ -25,6 +25,9 @@ Schema Changes:
 
 5. Machine Utilization & Maintenance (FRD_EQUIPMENT.md)
    - Add capacity_units_per_hour, last_maintenance_date, next_maintenance_due to machine table
+
+6. Work Order Status Enhancement (FRD_WORK_ORDERS.md)
+   - Add PAUSED status to OrderStatus enum for work order pause/resume functionality
 """
 from alembic import op
 import sqlalchemy as sa
@@ -259,12 +262,24 @@ def upgrade() -> None:
             'Fast lookup of machines with upcoming maintenance (for PM auto-generation)';
     """))
 
+    # ========================================================================
+    # 12. Add PAUSED status to OrderStatus enum
+    # ========================================================================
+
+    conn.execute(text("""
+        ALTER TYPE orderstatus ADD VALUE IF NOT EXISTS 'PAUSED' AFTER 'IN_PROGRESS';
+
+        COMMENT ON TYPE orderstatus IS
+            'Work order status: PLANNED, RELEASED, IN_PROGRESS, PAUSED, COMPLETED, CANCELLED';
+    """))
+
     print("✅ CostingMethod, DependencyType, and DispositionType enums created")
     print("✅ Work order costing fields added (standard_cost, actual_material_cost, actual_labor_cost, actual_overhead_cost, total_actual_cost)")
     print("✅ Work order dependency table created with indexes")
     print("✅ Organization costing_method field added")
     print("✅ NCR disposition fields added (disposition_type, disposition_date, rework_cost, scrap_cost, customer_affected, root_cause)")
     print("✅ Machine capacity and maintenance fields added (capacity_units_per_hour, last_maintenance_date, next_maintenance_due)")
+    print("✅ PAUSED status added to OrderStatus enum for work order pause/resume")
     print("✅ All indexes created for efficient querying")
 
 
@@ -324,4 +339,8 @@ def downgrade() -> None:
     conn.execute(text("DROP TYPE IF EXISTS dependencytype;"))
     conn.execute(text("DROP TYPE IF EXISTS costingmethod;"))
 
+    # Note: Cannot remove enum value 'PAUSED' from orderstatus (PostgreSQL limitation)
+    # Manual intervention required if downgrade is needed
+
     print("⚠️  Functional debt schema changes rolled back")
+    print("⚠️  Note: PAUSED status remains in orderstatus enum (PostgreSQL limitation)")

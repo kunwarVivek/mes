@@ -24,12 +24,15 @@ from app.application.dtos.traceability_dto import (
     WhereUsedRequest,
     WhereFromRequest,
     GenealogyTreeResponse,
+    RecallReportRequest,
+    RecallReportResponse,
 )
 from app.application.services.traceability_service import (
     LotBatchService,
     SerialNumberService,
     TraceabilityLinkService,
     GenealogyService,
+    RecallReportService,
 )
 
 router = APIRouter(prefix="/traceability", tags=["traceability"])
@@ -422,3 +425,65 @@ def query_where_from(
     """Build where-from tree (reverse genealogy)"""
     service = GenealogyService(db)
     return service.build_where_from_tree(request)
+
+
+# ==================== Recall Report Endpoint ====================
+
+@router.post("/recall-reports", response_model=RecallReportResponse, status_code=status.HTTP_201_CREATED)
+def generate_recall_report(
+    request: RecallReportRequest,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Generate a comprehensive recall report for affected lots.
+
+    This endpoint performs forward genealogy tracing to identify:
+    - All work orders that consumed the affected lots
+    - All finished goods produced from those work orders
+    - All shipments containing those finished goods
+    - All customers who received the affected products
+
+    The report includes:
+    - Material and lot details
+    - Total quantity affected
+    - List of affected work orders with consumption details
+    - List of affected shipments with customer information
+    - Aggregated customer impact summary
+    - Downstream impact statistics
+
+    **Use Case**: Product recall, quality issue investigation, supply chain impact analysis
+
+    **Authorization**: Requires authenticated user with traceability access
+
+    **Example Request**:
+    ```json
+    {
+        "material_id": 123,
+        "lot_numbers": ["LOT-2024-001", "LOT-2024-002"],
+        "reason": "Defective component detected in quality inspection",
+        "severity": "HIGH",
+        "include_customer_details": true,
+        "include_distribution_chain": true
+    }
+    ```
+
+    **Returns**: Comprehensive recall report with complete traceability data
+    """
+    service = RecallReportService(db)
+    user_id = current_user.get("id", 0)
+    organization_id = current_user.get("organization_id", 0)
+
+    try:
+        return service.generate_recall_report(request, user_id, organization_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        # Log the error for debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error generating recall report: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate recall report: {str(e)}"
+        )

@@ -201,3 +201,40 @@ class OEECalculationRequestDTO(BaseModel):
             }
         }
     }
+
+
+class MachineUtilizationDTO(BaseModel):
+    """DTO for machine utilization metrics response"""
+    machine_id: int = Field(..., description="Machine ID")
+    machine_code: str = Field(..., description="Machine code")
+    period_start: datetime = Field(..., description="Start of time period")
+    period_end: datetime = Field(..., description="End of time period")
+    utilization_percent: float = Field(..., ge=0.0, le=100.0, description="Utilization percentage")
+    total_available_hours: float = Field(..., ge=0.0, description="Total available hours in period")
+    total_running_hours: float = Field(..., ge=0.0, description="Total running hours")
+    total_downtime_hours: float = Field(..., ge=0.0, description="Total downtime hours")
+    oee_availability: float = Field(..., ge=0.0, le=100.0, description="OEE Availability percentage")
+    oee_performance: Optional[float] = Field(None, ge=0.0, le=100.0, description="OEE Performance percentage (requires ideal_cycle_time)")
+    oee_quality: Optional[float] = Field(None, ge=0.0, le=100.0, description="OEE Quality percentage (requires good_units/total_units)")
+    oee_overall: Optional[float] = Field(None, ge=0.0, le=100.0, description="Overall OEE percentage")
+    capacity_units_per_hour: Optional[float] = Field(None, ge=0.0, description="Machine capacity in units per hour")
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "machine_id": 123,
+                "machine_code": "CNC-001",
+                "period_start": "2024-11-01T00:00:00Z",
+                "period_end": "2024-11-12T23:59:59Z",
+                "utilization_percent": 75.5,
+                "total_available_hours": 240.0,
+                "total_running_hours": 181.2,
+                "total_downtime_hours": 58.8,
+                "oee_availability": 75.5,
+                "oee_performance": None,
+                "oee_quality": None,
+                "oee_overall": None,
+                "capacity_units_per_hour": 100.0
+            }
+        }
+    }

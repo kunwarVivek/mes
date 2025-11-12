@@ -367,3 +367,204 @@ class MaintenanceRepository:
             total_repair_time=total_repair_time,
             number_of_failures=number_of_failures
         )
+
+    def calculate_comprehensive_maintenance_metrics(
+        self,
+        organization_id: int,
+        plant_id: int,
+        start_date: datetime,
+        end_date: datetime,
+        machine_id: Optional[int] = None
+    ) -> dict:
+        """
+        Calculate comprehensive maintenance metrics including MTBF, MTTR, availability,
+        and PM compliance for machines within a date range.
+
+        Args:
+            organization_id: Organization ID for RLS
+            plant_id: Plant ID for RLS
+            start_date: Start of metrics period
+            end_date: End of metrics period
+            machine_id: Optional specific machine ID (if None, calculates for all machines)
+
+        Returns:
+            Dict with machine_metrics list and plant_aggregate dict
+        """
+        from app.models.machine import Machine, MachineStatusHistory, MachineStatus
+
+        # Build query for machines
+        machines_query = self.db.query(Machine).filter(
+            and_(
+                Machine.organization_id == organization_id,
+                Machine.plant_id == plant_id,
+                Machine.is_active == True
+            )
+        )
+
+        if machine_id is not None:
+            machines_query = machines_query.filter(Machine.id == machine_id)
+
+        machines = machines_query.all()
+
+        if not machines:
+            return {
+                "machine_metrics": [],
+                "plant_aggregate": {
+                    "avg_mtbf_hours": 0.0,
+                    "avg_mttr_hours": 0.0,
+                    "total_failures": 0,
+                    "total_downtime_hours": 0.0,
+                    "avg_availability_percent": 0.0,
+                    "avg_pm_compliance_percent": 0.0
+                }
+            }
+
+        # Calculate total time period in hours
+        total_time_hours = (end_date - start_date).total_seconds() / 3600.0
+
+        machine_metrics = []
+        total_failures_sum = 0
+        total_downtime_sum = 0.0
+        mtbf_sum = 0.0
+        mttr_sum = 0.0
+        availability_sum = 0.0
+        pm_compliance_sum = 0.0
+        machines_with_metrics = 0
+
+        for machine in machines:
+            # Calculate downtime from downtime events (all categories)
+            all_downtime_events = self.db.query(DowntimeEvent).filter(
+                and_(
+                    DowntimeEvent.organization_id == organization_id,
+                    DowntimeEvent.plant_id == plant_id,
+                    DowntimeEvent.machine_id == machine.id,
+                    DowntimeEvent.started_at >= start_date,
+                    DowntimeEvent.started_at <= end_date,
+                    DowntimeEvent.ended_at.isnot(None)
+                )
+            ).all()
+
+            total_downtime_minutes = 0.0
+            for event in all_downtime_events:
+                if event.ended_at:
+                    duration = (event.ended_at - event.started_at).total_seconds() / 60.0
+                    total_downtime_minutes += duration
+
+            total_downtime_hours_machine = total_downtime_minutes / 60.0
+
+            # Calculate breakdown-specific metrics (failures and repair time)
+            breakdown_events = self.db.query(DowntimeEvent).filter(
+                and_(
+                    DowntimeEvent.organization_id == organization_id,
+                    DowntimeEvent.plant_id == plant_id,
+                    DowntimeEvent.machine_id == machine.id,
+                    DowntimeEvent.category == DowntimeCategory.BREAKDOWN,
+                    DowntimeEvent.started_at >= start_date,
+                    DowntimeEvent.started_at <= end_date,
+                    DowntimeEvent.ended_at.isnot(None)
+                )
+            ).all()
+
+            number_of_failures = len(breakdown_events)
+            total_repair_minutes = 0.0
+
+            for event in breakdown_events:
+                if event.ended_at:
+                    duration = (event.ended_at - event.started_at).total_seconds() / 60.0
+                    total_repair_minutes += duration
+
+            total_repair_hours = total_repair_minutes / 60.0
+
+            # Calculate operating time
+            total_operating_hours = max(0.0, total_time_hours - total_downtime_hours_machine)
+
+            # Calculate MTBF and MTTR (in hours)
+            if number_of_failures > 0:
+                mtbf_hours = total_operating_hours / number_of_failures
+                mttr_hours = total_repair_hours / number_of_failures
+            else:
+                mtbf_hours = float('inf')
+                mttr_hours = 0.0
+
+            # Calculate availability (using formula: (Total Time - Downtime) / Total Time × 100)
+            if total_time_hours > 0:
+                availability_percent = ((total_time_hours - total_downtime_hours_machine) / total_time_hours) * 100
+            else:
+                availability_percent = 0.0
+
+            # Calculate PM compliance
+            scheduled_pms = self.db.query(PMWorkOrder).filter(
+                and_(
+                    PMWorkOrder.organization_id == organization_id,
+                    PMWorkOrder.plant_id == plant_id,
+                    PMWorkOrder.machine_id == machine.id,
+                    PMWorkOrder.scheduled_date >= start_date,
+                    PMWorkOrder.scheduled_date <= end_date
+                )
+            ).all()
+
+            scheduled_pm_count = len(scheduled_pms)
+            completed_pm_count = len([pm for pm in scheduled_pms if pm.status == PMStatus.COMPLETED])
+
+            if scheduled_pm_count > 0:
+                pm_compliance_percent = (completed_pm_count / scheduled_pm_count) * 100
+            else:
+                pm_compliance_percent = 0.0
+
+            # Add to machine metrics
+            machine_metrics.append({
+                "machine_id": machine.id,
+                "machine_code": machine.machine_code,
+                "machine_name": machine.machine_name,
+                "mtbf_hours": round(mtbf_hours, 2) if mtbf_hours != float('inf') else 0.0,
+                "mttr_hours": round(mttr_hours, 2),
+                "total_failures": number_of_failures,
+                "total_downtime_hours": round(total_downtime_hours_machine, 2),
+                "total_repair_hours": round(total_repair_hours, 2),
+                "total_operating_hours": round(total_operating_hours, 2),
+                "availability_percent": round(availability_percent, 2),
+                "pm_compliance_percent": round(pm_compliance_percent, 2),
+                "scheduled_pm_count": scheduled_pm_count,
+                "completed_pm_count": completed_pm_count
+            })
+
+            # Aggregate for plant-level metrics
+            total_failures_sum += number_of_failures
+            total_downtime_sum += total_downtime_hours_machine
+
+            # Only include machines with finite MTBF in averages
+            if mtbf_hours != float('inf'):
+                mtbf_sum += mtbf_hours
+                machines_with_metrics += 1
+
+            mttr_sum += mttr_hours
+            availability_sum += availability_percent
+            pm_compliance_sum += pm_compliance_percent
+
+        # Calculate plant aggregate metrics
+        machine_count = len(machines)
+        if machine_count > 0:
+            # Use machines_with_metrics for MTBF average to avoid division issues
+            avg_mtbf = mtbf_sum / machines_with_metrics if machines_with_metrics > 0 else 0.0
+            avg_mttr = mttr_sum / machine_count
+            avg_availability = availability_sum / machine_count
+            avg_pm_compliance = pm_compliance_sum / machine_count
+        else:
+            avg_mtbf = 0.0
+            avg_mttr = 0.0
+            avg_availability = 0.0
+            avg_pm_compliance = 0.0
+
+        plant_aggregate = {
+            "avg_mtbf_hours": round(avg_mtbf, 2),
+            "avg_mttr_hours": round(avg_mttr, 2),
+            "total_failures": total_failures_sum,
+            "total_downtime_hours": round(total_downtime_sum, 2),
+            "avg_availability_percent": round(avg_availability, 2),
+            "avg_pm_compliance_percent": round(avg_pm_compliance, 2)
+        }
+
+        return {
+            "machine_metrics": machine_metrics,
+            "plant_aggregate": plant_aggregate
+        }

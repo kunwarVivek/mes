@@ -5,7 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from decimal import Decimal
+import statistics
 
 from app.core.database import get_db
 from app.infrastructure.security.dependencies import get_current_user
@@ -40,7 +42,19 @@ from app.application.dtos.quality_enhancement_dto import (
     ControlChartDataRequest,
     ControlChartDataResponse,
     FPYCalculationRequest,
-    FPYResponse
+    FPYResponse,
+    # Nested DTOs for simplified API
+    NestedInspectionPlanCreateDTO,
+    NestedInspectionPlanResponse,
+    InspectionPlanUpdateNestedDTO,
+    InspectionLogCreateNestedDTO,
+    InspectionLogResponse,
+    InspectionLogMeasurementResponse,
+    NestedPointResponse,
+    NestedCharacteristicResponse,
+    # SPC Chart DTOs
+    SPCChartResponse,
+    SPCDataPoint
 )
 from app.application.services.quality_enhancement_service import (
     InspectionPlanService,
@@ -417,6 +431,625 @@ def get_fpy_metrics(
         fpy_percentage=fpy_percentage,
         period_start=period_start,
         period_end=period_end
+    )
+
+
+# ==================== Inspection Plans CRUD API ====================
+
+@router.post("/inspection-plans", response_model=NestedInspectionPlanResponse, status_code=status.HTTP_201_CREATED)
+def create_inspection_plan_nested(
+    plan_data: NestedInspectionPlanCreateDTO,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Create a new Inspection Plan with nested inspection points and characteristics.
+
+    This endpoint creates:
+    - An inspection plan
+    - Multiple inspection points (optional)
+    - Multiple characteristics per point (optional)
+
+    All in a single transaction.
+
+    Args:
+        plan_data: Nested plan creation data
+        db: Database session
+        current_user: Authenticated user
+
+    Returns:
+        Created inspection plan with all nested data
+
+    Raises:
+        HTTPException: If validation fails or creation errors occur
+    """
+    try:
+        organization_id = current_user.get("organization_id")
+        plant_id = current_user.get("plant_id")
+        user_id = current_user.get("id")
+
+        if not organization_id or not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Organization context and user ID required"
+            )
+
+        # Generate plan code from name
+        plan_code = plan_data.name.upper().replace(" ", "_")[:50]
+
+        # Create the inspection plan
+        from app.models.quality_enhancement import InspectionPlan
+        plan = InspectionPlan(
+            organization_id=organization_id,
+            plant_id=plant_id,
+            plan_code=plan_code,
+            plan_name=plan_data.name,
+            description=plan_data.description,
+            plan_type=plan_data.plan_type,
+            applies_to=plan_data.applies_to,
+            material_id=plan_data.material_id,
+            work_center_id=plan_data.work_center_id,
+            frequency=plan_data.frequency,
+            frequency_value=plan_data.frequency_value,
+            sample_size=plan_data.sample_size,
+            spc_enabled=plan_data.spc_enabled,
+            control_limits_config=plan_data.control_limits_config,
+            effective_date=plan_data.effective_date,
+            expiry_date=plan_data.expiry_date,
+            instructions=plan_data.instructions,
+            acceptance_criteria=plan_data.acceptance_criteria,
+            is_active=True,
+            revision=1,
+            created_by=user_id
+        )
+
+        db.add(plan)
+        db.flush()  # Get plan ID
+
+        logger.info(f"Created inspection plan: id={plan.id}, code={plan.plan_code}")
+
+        # Create inspection points
+        from app.models.quality_enhancement import InspectionPoint, InspectionCharacteristic
+
+        for point_data in plan_data.inspection_points:
+            point = InspectionPoint(
+                organization_id=organization_id,
+                inspection_plan_id=plan.id,
+                point_code=point_data.point_code,
+                point_name=point_data.point_name,
+                description=point_data.description,
+                inspection_method=point_data.inspection_method,
+                inspection_equipment=point_data.inspection_equipment,
+                sequence=point_data.sequence,
+                is_mandatory=point_data.is_mandatory,
+                is_critical=point_data.is_critical,
+                inspection_instructions=point_data.inspection_instructions,
+                acceptance_criteria=point_data.acceptance_criteria,
+                is_active=True
+            )
+
+            db.add(point)
+            db.flush()  # Get point ID
+
+            logger.info(f"Created inspection point: id={point.id}, code={point.point_code}")
+
+            # Create characteristics for this point
+            for char_data in point_data.characteristics:
+                characteristic = InspectionCharacteristic(
+                    organization_id=organization_id,
+                    inspection_point_id=point.id,
+                    characteristic_code=char_data.characteristic_code,
+                    characteristic_name=char_data.characteristic_name,
+                    description=char_data.description,
+                    characteristic_type=char_data.characteristic_type,
+                    data_type=char_data.data_type,
+                    unit_of_measure=char_data.unit_of_measure,
+                    target_value=char_data.target_value,
+                    lower_spec_limit=char_data.lower_spec_limit,
+                    upper_spec_limit=char_data.upper_spec_limit,
+                    lower_control_limit=char_data.lower_control_limit,
+                    upper_control_limit=char_data.upper_control_limit,
+                    track_spc=char_data.track_spc,
+                    control_chart_type=char_data.control_chart_type,
+                    subgroup_size=char_data.subgroup_size,
+                    allowed_values=char_data.allowed_values,
+                    tolerance_type=char_data.tolerance_type,
+                    tolerance=char_data.tolerance,
+                    sequence=char_data.sequence,
+                    is_active=True
+                )
+
+                db.add(characteristic)
+                logger.info(f"Created characteristic: code={characteristic.characteristic_code}")
+
+        db.commit()
+        db.refresh(plan)
+
+        logger.info(f"Inspection plan creation completed: plan_id={plan.id}, points={len(plan_data.inspection_points)}")
+
+        # Build nested response
+        return _build_nested_plan_response(plan, db)
+
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error creating inspection plan: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create inspection plan: {str(e)}"
+        )
+
+
+@router.get("/inspection-plans/{plan_id}", response_model=NestedInspectionPlanResponse)
+def get_inspection_plan_nested(
+    plan_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get an Inspection Plan with all nested points and characteristics.
+
+    Args:
+        plan_id: Inspection plan ID
+        db: Database session
+        current_user: Authenticated user
+
+    Returns:
+        Full inspection plan with all nested data
+
+    Raises:
+        HTTPException: If plan not found
+    """
+    from app.models.quality_enhancement import InspectionPlan
+
+    plan = db.query(InspectionPlan).filter(InspectionPlan.id == plan_id).first()
+
+    if not plan:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Inspection plan with id {plan_id} not found"
+        )
+
+    return _build_nested_plan_response(plan, db)
+
+
+@router.get("/inspection-plans", response_model=List[NestedInspectionPlanResponse])
+def list_inspection_plans_nested(
+    plan_type: Optional[str] = Query(None, description="Filter by plan type"),
+    applies_to: Optional[str] = Query(None, description="Filter by applies_to"),
+    is_active: Optional[bool] = Query(None, description="Filter by active status"),
+    material_id: Optional[int] = Query(None, description="Filter by material ID"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    List Inspection Plans with optional filtering.
+
+    Args:
+        plan_type: Filter by plan type (INCOMING, IN_PROCESS, FINAL, FIRST_ARTICLE, AUDIT)
+        applies_to: Filter by scope (MATERIAL, WORK_ORDER, PRODUCT, PROCESS)
+        is_active: Filter by active status
+        material_id: Filter by material ID
+        skip: Pagination offset
+        limit: Pagination limit
+        db: Database session
+        current_user: Authenticated user
+
+    Returns:
+        List of inspection plans
+    """
+    from app.models.quality_enhancement import InspectionPlan
+
+    organization_id = current_user.get("organization_id")
+
+    query = db.query(InspectionPlan).filter(
+        InspectionPlan.organization_id == organization_id
+    )
+
+    if plan_type:
+        query = query.filter(InspectionPlan.plan_type == plan_type)
+
+    if applies_to:
+        query = query.filter(InspectionPlan.applies_to == applies_to)
+
+    if is_active is not None:
+        query = query.filter(InspectionPlan.is_active == is_active)
+
+    if material_id:
+        query = query.filter(InspectionPlan.material_id == material_id)
+
+    query = query.order_by(InspectionPlan.created_at.desc())
+    plans = query.offset(skip).limit(limit).all()
+
+    return [_build_nested_plan_response(plan, db) for plan in plans]
+
+
+@router.put("/inspection-plans/{plan_id}", response_model=NestedInspectionPlanResponse)
+def update_inspection_plan_nested(
+    plan_id: int,
+    plan_data: InspectionPlanUpdateNestedDTO,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Update an Inspection Plan.
+
+    Note: This endpoint updates plan-level fields only.
+    To add/update/delete points and characteristics, use the dedicated endpoints.
+
+    Args:
+        plan_id: Inspection plan ID
+        plan_data: Update data
+        db: Database session
+        current_user: Authenticated user
+
+    Returns:
+        Updated inspection plan
+
+    Raises:
+        HTTPException: If plan not found
+    """
+    from app.models.quality_enhancement import InspectionPlan
+
+    plan = db.query(InspectionPlan).filter(InspectionPlan.id == plan_id).first()
+
+    if not plan:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Inspection plan with id {plan_id} not found"
+        )
+
+    try:
+        # Update fields
+        update_data = plan_data.dict(exclude_unset=True)
+
+        for field, value in update_data.items():
+            if field == "name":
+                setattr(plan, "plan_name", value)
+            elif hasattr(plan, field):
+                setattr(plan, field, value)
+
+        db.commit()
+        db.refresh(plan)
+
+        logger.info(f"Updated inspection plan: id={plan_id}")
+
+        return _build_nested_plan_response(plan, db)
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating inspection plan: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update inspection plan: {str(e)}"
+        )
+
+
+@router.delete("/inspection-plans/{plan_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_inspection_plan_nested(
+    plan_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Delete an Inspection Plan (soft delete - sets is_active = False).
+
+    Args:
+        plan_id: Inspection plan ID
+        db: Database session
+        current_user: Authenticated user
+
+    Raises:
+        HTTPException: If plan not found
+    """
+    from app.models.quality_enhancement import InspectionPlan
+
+    plan = db.query(InspectionPlan).filter(InspectionPlan.id == plan_id).first()
+
+    if not plan:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Inspection plan with id {plan_id} not found"
+        )
+
+    try:
+        plan.is_active = False
+        db.commit()
+
+        logger.info(f"Soft deleted inspection plan: id={plan_id}")
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting inspection plan: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete inspection plan: {str(e)}"
+        )
+
+
+@router.post("/inspection-logs", response_model=InspectionLogResponse, status_code=status.HTTP_201_CREATED)
+def log_inspection_results(
+    log_data: InspectionLogCreateNestedDTO,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Log Inspection Results with measurements.
+
+    This endpoint:
+    1. Validates measurements against characteristic limits (LSL/USL)
+    2. Records all measurements
+    3. Determines overall inspection status (PASS/FAIL)
+    4. Returns detailed results
+
+    Args:
+        log_data: Inspection log data with measurements
+        db: Database session
+        current_user: Authenticated user
+
+    Returns:
+        Inspection log with results
+
+    Raises:
+        HTTPException: If validation fails
+    """
+    try:
+        organization_id = current_user.get("organization_id")
+
+        if not organization_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Organization context required"
+            )
+
+        # Get the inspection plan
+        from app.models.quality_enhancement import InspectionPlan, InspectionCharacteristic, InspectionMeasurement
+
+        plan = db.query(InspectionPlan).filter(
+            InspectionPlan.id == log_data.inspection_plan_id
+        ).first()
+
+        if not plan:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Inspection plan with id {log_data.inspection_plan_id} not found"
+            )
+
+        logger.info(f"Logging inspection results for plan: {plan.plan_name}")
+
+        # Track results
+        measurement_records = []
+        conforming_count = 0
+        non_conforming_count = 0
+        out_of_control_count = 0
+
+        # Process each measurement
+        for measurement_data in log_data.measurements:
+            # Get characteristic
+            characteristic = db.query(InspectionCharacteristic).filter(
+                InspectionCharacteristic.id == measurement_data.characteristic_id
+            ).first()
+
+            if not characteristic:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Characteristic with id {measurement_data.characteristic_id} not found"
+                )
+
+            # Create measurement record
+            measurement = InspectionMeasurement(
+                organization_id=organization_id,
+                characteristic_id=characteristic.id,
+                inspection_plan_id=plan.id,
+                work_order_id=log_data.work_order_id,
+                material_id=log_data.material_id,
+                lot_number=log_data.lot_number,
+                serial_number=log_data.serial_number,
+                measured_value=measurement_data.measured_value,
+                measured_text=measurement_data.measured_text,
+                sample_number=measurement_data.sample_number,
+                measured_by=log_data.inspected_by_user_id,
+                measurement_timestamp=datetime.now(timezone.utc),
+                inspection_equipment_id=log_data.inspection_equipment_id,
+                environmental_conditions=log_data.environmental_conditions,
+                notes=measurement_data.notes
+            )
+
+            # Validate measurement against limits
+            if characteristic.characteristic_type == 'VARIABLE' and measurement_data.measured_value is not None:
+                measured_val = float(measurement_data.measured_value)
+
+                # Check spec limits
+                measurement.is_conforming = characteristic.is_within_spec(measured_val)
+
+                # Calculate deviation from target
+                if characteristic.target_value:
+                    measurement.deviation = measurement.calculate_deviation(float(characteristic.target_value))
+
+                # Check control limits for SPC
+                if characteristic.track_spc:
+                    is_within_control = characteristic.is_within_control_limits(measured_val)
+                    measurement.is_out_of_control = not is_within_control
+
+                    if measurement.is_out_of_control:
+                        out_of_control_count += 1
+                        measurement.control_violation_type = "OUT_OF_LIMITS"
+                        logger.warning(
+                            f"Out of control measurement: char={characteristic.characteristic_name}, "
+                            f"value={measured_val}, UCL={characteristic.upper_control_limit}, "
+                            f"LCL={characteristic.lower_control_limit}"
+                        )
+            else:
+                # For attribute characteristics, mark as conforming by default
+                measurement.is_conforming = True
+
+            # Track counts
+            if measurement.is_conforming:
+                conforming_count += 1
+            else:
+                non_conforming_count += 1
+
+            db.add(measurement)
+            measurement_records.append((measurement, characteristic))
+
+        db.flush()  # Get IDs
+
+        # Determine overall status
+        inspection_status = "PASS" if non_conforming_count == 0 else "FAIL"
+
+        db.commit()
+
+        logger.info(
+            f"Inspection logged: plan_id={plan.id}, status={inspection_status}, "
+            f"measurements={len(measurement_records)}, conforming={conforming_count}, "
+            f"non_conforming={non_conforming_count}"
+        )
+
+        # Build response
+        measurement_responses = []
+        for measurement, characteristic in measurement_records:
+            db.refresh(measurement)
+            measurement_responses.append(
+                InspectionLogMeasurementResponse(
+                    id=measurement.id,
+                    characteristic_id=characteristic.id,
+                    characteristic_name=characteristic.characteristic_name,
+                    measured_value=measurement.measured_value,
+                    measured_text=measurement.measured_text,
+                    is_conforming=measurement.is_conforming,
+                    deviation=measurement.deviation,
+                    is_out_of_control=measurement.is_out_of_control,
+                    sample_number=measurement.sample_number,
+                    notes=measurement.notes
+                )
+            )
+
+        return InspectionLogResponse(
+            log_id=measurement_records[0][0].id if measurement_records else 0,
+            inspection_plan_id=plan.id,
+            plan_name=plan.plan_name,
+            inspected_by_user_id=log_data.inspected_by_user_id,
+            work_order_id=log_data.work_order_id,
+            material_id=log_data.material_id,
+            lot_number=log_data.lot_number,
+            serial_number=log_data.serial_number,
+            inspection_status=inspection_status,
+            total_measurements=len(measurement_records),
+            conforming_measurements=conforming_count,
+            non_conforming_measurements=non_conforming_count,
+            out_of_control_measurements=out_of_control_count,
+            inspection_timestamp=datetime.now(timezone.utc),
+            measurements=measurement_responses,
+            notes=log_data.notes
+        )
+
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error logging inspection results: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to log inspection results: {str(e)}"
+        )
+
+
+# Helper function to build nested response
+def _build_nested_plan_response(plan, db: Session) -> NestedInspectionPlanResponse:
+    """
+    Build a nested inspection plan response with all points and characteristics.
+
+    Args:
+        plan: InspectionPlan model instance
+        db: Database session
+
+    Returns:
+        NestedInspectionPlanResponse with all nested data
+    """
+    points_response = []
+
+    for point in plan.inspection_points:
+        if not point.is_active:
+            continue
+
+        characteristics_response = [
+            NestedCharacteristicResponse(
+                id=char.id,
+                characteristic_code=char.characteristic_code,
+                characteristic_name=char.characteristic_name,
+                description=char.description,
+                characteristic_type=char.characteristic_type,
+                data_type=char.data_type,
+                unit_of_measure=char.unit_of_measure,
+                target_value=char.target_value,
+                lower_spec_limit=char.lower_spec_limit,
+                upper_spec_limit=char.upper_spec_limit,
+                lower_control_limit=char.lower_control_limit,
+                upper_control_limit=char.upper_control_limit,
+                track_spc=char.track_spc,
+                control_chart_type=char.control_chart_type,
+                subgroup_size=char.subgroup_size,
+                allowed_values=char.allowed_values,
+                tolerance_type=char.tolerance_type,
+                tolerance=char.tolerance,
+                is_active=char.is_active,
+                sequence=char.sequence
+            )
+            for char in point.characteristics
+            if char.is_active
+        ]
+
+        points_response.append(
+            NestedPointResponse(
+                id=point.id,
+                point_code=point.point_code,
+                point_name=point.point_name,
+                description=point.description,
+                inspection_method=point.inspection_method,
+                inspection_equipment=point.inspection_equipment,
+                sequence=point.sequence,
+                is_mandatory=point.is_mandatory,
+                is_critical=point.is_critical,
+                inspection_instructions=point.inspection_instructions,
+                acceptance_criteria=point.acceptance_criteria,
+                is_active=point.is_active,
+                characteristics=characteristics_response
+            )
+        )
+
+    return NestedInspectionPlanResponse(
+        id=plan.id,
+        organization_id=plan.organization_id,
+        plant_id=plan.plant_id,
+        plan_code=plan.plan_code,
+        plan_name=plan.plan_name,
+        description=plan.description,
+        plan_type=plan.plan_type,
+        applies_to=plan.applies_to,
+        material_id=plan.material_id,
+        work_center_id=plan.work_center_id,
+        frequency=plan.frequency,
+        frequency_value=plan.frequency_value,
+        sample_size=plan.sample_size,
+        spc_enabled=plan.spc_enabled,
+        control_limits_config=plan.control_limits_config,
+        approved_by=plan.approved_by,
+        approved_date=plan.approved_date,
+        effective_date=plan.effective_date,
+        expiry_date=plan.expiry_date,
+        instructions=plan.instructions,
+        acceptance_criteria=plan.acceptance_criteria,
+        is_active=plan.is_active,
+        revision=plan.revision,
+        created_at=plan.created_at,
+        updated_at=plan.updated_at,
+        created_by=plan.created_by,
+        inspection_points=points_response
     )
 
 
@@ -1049,4 +1682,233 @@ def disposition_ncr(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to process disposition: {str(e)}"
+        )
+
+
+# ==================== SPC Chart Endpoint ====================
+
+@router.get("/spc-charts", response_model=SPCChartResponse)
+def get_spc_chart_data(
+    characteristic_id: int = Query(..., gt=0, description="Characteristic ID to analyze"),
+    start_date: datetime = Query(..., description="Start date for analysis period"),
+    end_date: datetime = Query(..., description="End date for analysis period"),
+    control_limit_sigma: float = Query(3.0, ge=1.0, le=6.0, description="Number of standard deviations for control limits"),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get SPC (Statistical Process Control) chart data for a characteristic.
+
+    This endpoint performs comprehensive SPC analysis including:
+    - Process capability indices (Cp, Cpk)
+    - Control limits (UCL, LCL)
+    - Statistical measures (mean, std dev)
+    - Out-of-control and out-of-spec detection
+
+    **Calculations:**
+    - Cp = (USL - LSL) / (6 × σ)
+    - Cpk = min[(USL - μ) / (3 × σ), (μ - LSL) / (3 × σ)]
+    - UCL = μ + (control_limit_sigma × σ)
+    - LCL = μ - (control_limit_sigma × σ)
+
+    **Capability Assessment:**
+    - Cpk >= 1.33: EXCELLENT
+    - Cpk >= 1.00: CAPABLE
+    - Cpk >= 0.67: MARGINAL
+    - Cpk < 0.67: INCAPABLE
+
+    Args:
+        characteristic_id: ID of the inspection characteristic to analyze
+        start_date: Start of time range for analysis
+        end_date: End of time range for analysis
+        control_limit_sigma: Number of standard deviations for control limits (default: 3.0)
+        db: Database session
+        current_user: Authenticated user
+
+    Returns:
+        SPCChartResponse with comprehensive SPC data
+
+    Raises:
+        HTTPException: If characteristic not found or insufficient data
+    """
+    try:
+        organization_id = current_user.get("organization_id")
+
+        if not organization_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Organization context required"
+            )
+
+        logger.info(
+            f"SPC chart request: char_id={characteristic_id}, "
+            f"start={start_date}, end={end_date}, sigma={control_limit_sigma}"
+        )
+
+        # Get the characteristic
+        from app.models.quality_enhancement import InspectionCharacteristic, InspectionMeasurement
+
+        characteristic = db.query(InspectionCharacteristic).filter(
+            InspectionCharacteristic.id == characteristic_id,
+            InspectionCharacteristic.organization_id == organization_id
+        ).first()
+
+        if not characteristic:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Characteristic with id {characteristic_id} not found"
+            )
+
+        # Only variable characteristics support SPC analysis
+        if characteristic.characteristic_type != 'VARIABLE':
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"SPC analysis only available for VARIABLE characteristics. "
+                       f"Characteristic {characteristic.characteristic_name} is {characteristic.characteristic_type}"
+            )
+
+        # Query measurements for the time period (optimized for TimescaleDB)
+        measurements = db.query(InspectionMeasurement).filter(
+            InspectionMeasurement.characteristic_id == characteristic_id,
+            InspectionMeasurement.organization_id == organization_id,
+            InspectionMeasurement.measurement_timestamp >= start_date,
+            InspectionMeasurement.measurement_timestamp <= end_date,
+            InspectionMeasurement.measured_value.isnot(None)
+        ).order_by(InspectionMeasurement.measurement_timestamp.asc()).all()
+
+        sample_size = len(measurements)
+
+        logger.info(f"Retrieved {sample_size} measurements for SPC analysis")
+
+        # Edge case: insufficient data
+        if sample_size < 2:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Insufficient data for SPC analysis. Found {sample_size} measurements, need at least 2."
+            )
+
+        # Extract measurement values
+        values = [float(m.measured_value) for m in measurements]
+
+        # Calculate statistical measures
+        mean_value = statistics.mean(values)
+
+        # Use sample standard deviation (n-1) for process capability
+        if sample_size >= 2:
+            std_dev_value = statistics.stdev(values)
+        else:
+            std_dev_value = 0.0
+
+        logger.info(f"Statistics: mean={mean_value:.6f}, std_dev={std_dev_value:.6f}, n={sample_size}")
+
+        # Calculate control limits
+        ucl = mean_value + (control_limit_sigma * std_dev_value)
+        lcl = mean_value - (control_limit_sigma * std_dev_value)
+
+        # Get spec limits from characteristic
+        usl = float(characteristic.upper_spec_limit) if characteristic.upper_spec_limit else None
+        lsl = float(characteristic.lower_spec_limit) if characteristic.lower_spec_limit else None
+        target = float(characteristic.target_value) if characteristic.target_value else None
+
+        # Calculate Cp and Cpk
+        cp = None
+        cpk = None
+        capability_assessment = "UNKNOWN"
+
+        if usl is not None and lsl is not None and std_dev_value > 0:
+            # Cp = (USL - LSL) / (6 × σ)
+            cp = (usl - lsl) / (6 * std_dev_value)
+
+            # Cpk = min[(USL - μ) / (3 × σ), (μ - LSL) / (3 × σ)]
+            cpu = (usl - mean_value) / (3 * std_dev_value)
+            cpl = (mean_value - lsl) / (3 * std_dev_value)
+            cpk = min(cpu, cpl)
+
+            # Capability assessment based on Cpk
+            if cpk >= 1.33:
+                capability_assessment = "EXCELLENT"
+            elif cpk >= 1.00:
+                capability_assessment = "CAPABLE"
+            elif cpk >= 0.67:
+                capability_assessment = "MARGINAL"
+            else:
+                capability_assessment = "INCAPABLE"
+
+            logger.info(
+                f"Process capability: Cp={cp:.3f}, Cpk={cpk:.3f}, "
+                f"assessment={capability_assessment}"
+            )
+        elif std_dev_value == 0:
+            capability_assessment = "NO_VARIATION"
+            logger.warning("Standard deviation is zero - no process variation detected")
+        elif usl is None or lsl is None:
+            capability_assessment = "SPEC_LIMITS_MISSING"
+            logger.warning(f"Spec limits missing: USL={usl}, LSL={lsl}")
+
+        # Analyze each data point for out-of-control and out-of-spec
+        data_points = []
+        out_of_control_count = 0
+        out_of_spec_count = 0
+
+        for measurement in measurements:
+            value = float(measurement.measured_value)
+
+            # Check if out of control (beyond control limits)
+            is_out_of_control = False
+            if value > ucl or value < lcl:
+                is_out_of_control = True
+                out_of_control_count += 1
+
+            # Check if out of spec (beyond specification limits)
+            is_out_of_spec = False
+            if usl is not None and value > usl:
+                is_out_of_spec = True
+                out_of_spec_count += 1
+            elif lsl is not None and value < lsl:
+                is_out_of_spec = True
+                out_of_spec_count += 1
+
+            data_points.append(
+                SPCDataPoint(
+                    timestamp=measurement.measurement_timestamp,
+                    value=Decimal(str(value)),
+                    is_out_of_control=is_out_of_control,
+                    is_out_of_spec=is_out_of_spec
+                )
+            )
+
+        logger.info(
+            f"SPC analysis complete: out_of_control={out_of_control_count}, "
+            f"out_of_spec={out_of_spec_count}"
+        )
+
+        # Build response
+        return SPCChartResponse(
+            characteristic_id=characteristic.id,
+            characteristic_name=characteristic.characteristic_name,
+            period_start=start_date,
+            period_end=end_date,
+            sample_size=sample_size,
+            mean=Decimal(str(mean_value)),
+            std_dev=Decimal(str(std_dev_value)),
+            target_value=Decimal(str(target)) if target is not None else None,
+            lower_spec_limit=Decimal(str(lsl)) if lsl is not None else None,
+            upper_spec_limit=Decimal(str(usl)) if usl is not None else None,
+            lower_control_limit=Decimal(str(lcl)),
+            upper_control_limit=Decimal(str(ucl)),
+            cp=Decimal(str(cp)) if cp is not None else None,
+            cpk=Decimal(str(cpk)) if cpk is not None else None,
+            capability_assessment=capability_assessment,
+            out_of_control_count=out_of_control_count,
+            out_of_spec_count=out_of_spec_count,
+            data_points=data_points
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating SPC chart: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate SPC chart: {str(e)}"
         )

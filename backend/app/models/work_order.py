@@ -21,6 +21,7 @@ class OrderStatus(str, enum.Enum):
     PLANNED = "PLANNED"
     RELEASED = "RELEASED"
     IN_PROGRESS = "IN_PROGRESS"
+    PAUSED = "PAUSED"
     COMPLETED = "COMPLETED"
     CANCELLED = "CANCELLED"
 
