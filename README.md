@@ -498,10 +498,10 @@ Comprehensive documentation is available in the `docs/` directory:
 - **[Architecture Overview](docs/02-architecture/OVERVIEW.md)**: System design and DDD layers
 - **[Database Schema](docs/02-architecture/DATABASE_SCHEMA.md)**: Complete schema with RLS policies
 - **[API Design](docs/02-architecture/API_DESIGN.md)**: REST API patterns and authentication
-- **[API Reference](API_REFERENCE.md)**: Complete endpoint documentation
+- **[API Reference](docs/API_REFERENCE.md)**: Complete endpoint documentation
 
 ### For Users
-- **[User Guide](USER_GUIDE.md)**: Customer-facing documentation
+- **[User Guide](docs/USER_GUIDE.md)**: Customer-facing documentation
 - **[Pricing & Features](https://unison.com/pricing)**: Feature comparison matrix
 
 ### Domain Documentation
@@ -690,13 +690,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### For Customers
 - **Email**: support@unison.com
-- **Documentation**: [User Guide](USER_GUIDE.md)
+- **Documentation**: [User Guide](docs/USER_GUIDE.md)
 - **Billing Portal**: Accessible via app → Billing → Manage Payment Methods
 
 ### For Developers
 - **GitHub Issues**: [github.com/kunwarVivek/mes/issues](https://github.com/kunwarVivek/mes/issues)
 - **Documentation**: [docs/README.md](docs/README.md)
-- **API Reference**: [API_REFERENCE.md](API_REFERENCE.md)
+- **API Reference**: [API_REFERENCE.md](docs/API_REFERENCE.md)
 
 ---
 

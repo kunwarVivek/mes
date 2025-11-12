@@ -2185,12 +2185,12 @@ npm run dev
 ## Additional Resources
 
 ### Documentation
-- [PRD - Product Requirements](docs/01-requirements/PRD.md)
-- [FRD - Functional Requirements](docs/01-requirements/FRD_INDEX.md)
-- [Architecture Overview](docs/02-architecture/OVERVIEW.md)
-- [Database Schema](docs/02-architecture/DATABASE_SCHEMA.md)
-- [API Design](docs/02-architecture/API_DESIGN.md)
-- [PostgreSQL Extensions](docs/03-postgresql/README.md)
+- [PRD - Product Requirements](01-requirements/PRD.md)
+- [FRD - Functional Requirements](01-requirements/FRD_INDEX.md)
+- [Architecture Overview](02-architecture/OVERVIEW.md)
+- [Database Schema](02-architecture/DATABASE_SCHEMA.md)
+- [API Design](02-architecture/API_DESIGN.md)
+- [PostgreSQL Extensions](03-postgresql/README.md)
 
 ### External Resources
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
