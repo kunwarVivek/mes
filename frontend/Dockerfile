@@ -1,13 +1,33 @@
-FROM node:20-alpine
+# Multi-stage build for production-ready React application
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Copy package files and install dependencies
 COPY package*.json ./
+RUN npm ci --only=production=false
 
-RUN npm install
-
+# Copy source code
 COPY . .
 
-EXPOSE 5173
+# Build production bundle
+RUN npm run build
 
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+# Production stage with nginx
+FROM nginx:alpine
+
+# Copy built files from builder stage
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expose port 80
+EXPOSE 80
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]
