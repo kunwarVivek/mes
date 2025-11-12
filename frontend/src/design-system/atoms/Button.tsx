@@ -11,7 +11,7 @@ import './Button.css'
  */
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost'
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline' | 'link'
   size?: 'sm' | 'md' | 'lg'
   fullWidth?: boolean
   isLoading?: boolean

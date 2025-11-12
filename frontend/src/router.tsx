@@ -27,6 +27,8 @@ import { adminOrganizationsRoute } from './routes/admin-organizations'
 import { adminOrganizationDetailRoute } from './routes/admin-organization-detail'
 import { adminAnalyticsRoute } from './routes/admin-analytics'
 import { billingRoute } from './routes/billing'
+import { suppliersRoute } from './routes/suppliers'
+import { materialTransactionsRoute } from './routes/material-transactions'
 
 /**
  * TanStack Router Configuration
@@ -101,6 +103,9 @@ const routeTree = rootRoute.addChildren([
     schedulingRoute,
     // Billing route
     billingRoute,
+    // Suppliers and Material Transactions
+    suppliersRoute,
+    materialTransactionsRoute,
     // Admin routes
     adminDashboardRoute,
     adminOrganizationsRoute,

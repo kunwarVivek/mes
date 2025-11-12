@@ -12,7 +12,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/design-system/atoms/Card'
+} from '@/components/ui/card'
 import { Button } from '@/design-system/atoms/Button'
 import { Progress } from '@/design-system/atoms/Progress'
 import { Alert, AlertDescription } from '@/design-system/atoms/Alert'

@@ -44,6 +44,7 @@
     "@tanstack/react-query-devtools": "^5.8.4",
     "@tanstack/react-router": "^1.8.0",
     "@types/dompurify": "^3.0.5",
+    "@zxing/library": "^0.21.3",
     "axios": "^1.6.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

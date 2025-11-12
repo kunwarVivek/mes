@@ -106,7 +106,7 @@ export const OfflineIndicator: React.FC = () => {
     }
   };
 
-  const processAction = async (action: QueuedAction): Promise<void> => {
+  const processAction = async (_action: QueuedAction): Promise<void> => {
     // This would integrate with your API client
     // For now, just simulate the sync
     return new Promise((resolve, reject) => {

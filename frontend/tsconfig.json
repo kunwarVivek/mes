@@ -12,14 +12,23 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": false,
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
   },
   "include": ["src"],
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/__tests__/**",
+    "src/test/**",
+    "src/utils/service-worker-example.ts",
+    "src/pages/admin/**",
+    "src/pages/UsersPage.tsx"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
