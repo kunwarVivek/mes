@@ -1,0 +1,4 @@
+// Add these to dependencies in package.json:
+"frappe-gantt": "^0.6.1",
+"@types/frappe-gantt": "^0.5.4",
+"date-fns": "^2.30.0"
